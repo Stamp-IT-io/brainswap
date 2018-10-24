@@ -102,15 +102,16 @@ E.g.:
 Probably. It has been successfully tested it using the following procedure:
 
 * Install Termux using Google Play
+* Install wget (to download brainswap), OpenSSH and GNU sed:
+
+      pkg install wget
+      pkg install openssh
+      pkg install sed
+
 * Inside Termux, download brainswap:
 
       wget https://github.com/Stamp-IT-io/brainswap/raw/master/brainswap
       chmod +x brainswap
-
-* Install OpenSSH and GNU sed:
-
-      pkg install openssh
-      pkg install sed
 
 * Setup OpenSSH to login without password.
   * For example, you can copy your RSA key to `~/.ssh/id_rsa`
