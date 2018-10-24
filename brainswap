@@ -143,7 +143,7 @@ SED_DETAILS_SCRIPT='
   s!__NEXT__.*"NextDump":"===ProcessListStart===[^"]*\(\\u003cnil\\u003e\)[^"]*===ProcessListEnd===!NextNil__RAW__!;
   s!__NEXT__.*"NextDump":"===ProcessListStart===[^"]*===ProcessListEnd===!OK__RAW__!;
   s!__NEXT__!NoNextDump__RAW__!;
-  s!__RAW__.*"RawDump":"===ProcessListStart===[^"]*\(\\u003cnil\\u003e\)[^"]*===ProcessListEnd===!awl__PREV__!;
+  s!__RAW__.*"RawDump":"===ProcessListStart===[^"]*\(\\u003cnil\\u003e\)[^"]*===ProcessListEnd===!RawNil__PREV__!;
   s!__RAW__.*"RawDump":"===ProcessListStart===[^"]*===ProcessListEnd===!OK__PREV__!;
   s!__RAW__!NoRawDump__PREV__!;
   s!__PREV__.*"PrevDump":"===ProcessListStart===[^"]*\(\\u003cnil\\u003e\)[^"]*===ProcessListEnd===.*!PrevNil!;
