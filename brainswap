@@ -476,6 +476,6 @@ if ! echo "$NEWCONF1" | $SSH1 $SUDO1 sh -c '"cat >'"$CONF_PATH"'"'; then
 	exit 1
 fi
 
-echo "Brainswap initiated successfully for block $CHANGE_HEIGHT, in about $SWAP_WAIT minutes)"
+echo "Brainswap initiated successfully for block $CHANGE_HEIGHT, in about $SWAP_WAIT minutes"
 
 exit 0
