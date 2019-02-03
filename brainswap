@@ -151,6 +151,8 @@ SED_DETAILS_SCRIPT='
   s!__PREV__.*!NoPrevDump!;
   p'
 
+WGET_HOME="wget -q -O - \"http://127.0.0.1:8090/\""
+SED_VERSION_SCRIPT='s!^.*<h1[^>]*>.* <small>\([^<]*\)</small>.*$!\1!p'
 
 # sed script to extract IdentityChainID
 SED_ID_SCRIPT='s/^[[:space:]]*IdentityChainID[[:space:]]*=[[:space:]]*\(\([0-9a-z]\)*\)[[:space:]]*$/\1/p'
@@ -221,6 +223,16 @@ if ! echo "$Id1" | egrep -q "^[0-9a-f]{64}$"; then
 	exit 1
 fi
 
+[ "$QUIET" != 1 ] && echo "Getting factomd version from $node1..." >&2
+
+# Obtain factomd version from node1
+VERSION1=$($SSH1 $WGET_HOME | sed -n "$SED_VERSION_SCRIPT")
+
+if ! echo "$VERSION1" | grep -q '^v[0-9]*[.][0-9]*[.][0-9]*'; then
+	echo "$0: Cannot get factomd version from $node1 (is it running?)" >&2
+	exit 1
+fi
+
 [ "$QUIET" != 1 ] && echo "Getting factomd details from $node1..." >&2
 
 # Obtain information about factomd from node1
@@ -238,19 +250,10 @@ fi
 
 # Extract information about factomd from node1
 FLAGS=$(echo "$DETAILS" | cut -d\  -f1)
+FLAGS1=$FLAGS
 NEXT_HEIGHT1=$(echo "$DETAILS" | cut -d\  -f5)
 MINUTE1=$(echo "$DETAILS" | cut -d\  -f6)
 PROCESS_LIST=$(echo "$DETAILS" | cut -d\  -f7)
-
-# Calculate time before swap and ChangeAcksHeight
-CHANGE_HEIGHT=$NEXT_HEIGHT1
-SWAP_WAIT=$((10 - $MINUTE1))
-if [ "$MINUTE1" -eq 9 ]; then
-	# If we are on minute 9, we are too close to next block, we wait for one more block
-	SWAP_WAIT=$(($SWAP_WAIT + 10))
-	CHANGE_HEIGHT=$(($CHANGE_HEIGHT + 1))
-fi
-CAH="ChangeAcksHeight = $CHANGE_HEIGHT"
 
 # Ensure node1 is an authority node and operating
 if [ "$FLAGS" != "A___" -a "$FLAGS" != "L___" ]; then
@@ -354,7 +357,17 @@ if [ "$Id1" = "$Id2" ]; then
 	exit 1
 fi
 
-[ "$QUIET" != 1 ] && echo "Getting factomd details from $node1..." >&2
+[ "$QUIET" != 1 ] && echo "Getting factomd version from $node2..." >&2
+
+# Obtain factomd version from node2
+VERSION2=$($SSH2 $WGET_HOME | sed -n "$SED_VERSION_SCRIPT")
+
+if ! echo "$VERSION2" | grep -q '^v[0-9]*[.][0-9]*[.][0-9]*'; then
+	echo "$0: Cannot get factomd version from $node2 (is it running?)" >&2
+	exit 1
+fi
+
+[ "$QUIET" != 1 ] && echo "Getting factomd details from $node2..." >&2
 
 # Obtain information about factomd from node2
 DETAILS=$($SSH2 $WGET_DETAILS | sed -n "$SED_DETAILS_SCRIPT")
@@ -415,13 +428,40 @@ if [ "$MINUTE1" != "$MINUTE2" ]; then
 	exit 1
 fi
 
+# Calculate time before swap and ChangeAcksHeight
+CHANGE_HEIGHT=$NEXT_HEIGHT1
+SWAP_WAIT=$((10 - $MINUTE1))
+if [ "$MINUTE1" -eq 9 ]; then
+	# If we are on minute 9, we are too close to next block, we wait for one more block
+	SWAP_WAIT=$(($SWAP_WAIT + 10))
+	CHANGE_HEIGHT=$(($CHANGE_HEIGHT + 1))
+fi
+
+if [[ "$VERSION1" < v6.1.1 ]]; then
+	CAH1="ChangeAcksHeight = $CHANGE_HEIGHT"
+else
+	# version >= v6.1.1, ChangeAckHeight must be set to the block before the brainswap
+	CAH1="ChangeAcksHeight = $(($CHANGE_HEIGHT-1))"
+	echo -e "Using $CAH1 for $node1" >&2
+	if [ "$FLAGS1" = "A___" ]; then
+		echo -e "WARNING: Brainswaping from an v6.1.1 audit node will probably result in a panic on the destination node." >&2
+	fi
+fi
+if [[ "$VERSION2" < v6.1.1 ]]; then
+	CAH2="ChangeAcksHeight = $CHANGE_HEIGHT"
+else
+	# version >= v6.1.1, ChangeAckHeight must be set to the block before the brainswap
+	CAH2="ChangeAcksHeight = $(($CHANGE_HEIGHT-1))"
+	echo -e "Using $CAH2 for $node2" >&2
+fi
+
 # Generating new factomd.conf for node1
 NEWCONF1=$(echo "$CONF1" | grep -i -v '^[[:space:]]*IdentityChainID' | grep -i -v '^[[:space:]]*LocalServerPrivKey' | grep -i -v '^[[:space:]]*LocalServerPublicKey' | grep -i -v '^[[:space:]]*ChangeAcksHeight')
 NEWCONF1=$(echo "$NEWCONF1" | sed "$CONF1_APPEND
 $IdCId2\\
 $LSPrivK2\\
 $LSPubK2\\
-$CAH")
+$CAH1")
 
 if [ "$?" != 0 ]; then
 	# Maybe due to a bad factomd.conf
@@ -435,7 +475,7 @@ NEWCONF2=$(echo "$NEWCONF2" | sed "$CONF2_APPEND
 $IdCId1\\
 $LSPrivK1\\
 $LSPubK1\\
-$CAH")
+$CAH2")
 
 if [ "$?" != 0 ]; then
 	# Maybe due to a bad factomd.conf
