@@ -1,5 +1,15 @@
 # Stamp-IT brainswap for factomd
 
+## Factomd v6.1.1-rc1 compatibility
+
+This version of Stamp-IT brainswap is compatible with factomd v6.1.1-rc1.
+For each node, factomd version is detected and `ChangeAcksHeight` is adjusted by `- 1` to account for a bug in v6.1.1-rc1.
+Make sure to download this version with:
+
+      wget https://github.com/Stamp-IT-io/brainswap/raw/factomd-v6.1.1-rc1/brainswap
+
+## Overview
+
 Stamp-IT brainswap uses OpenSSH to brainswap two factomd nodes.
 
 To do this, it calculates the block height at which the brainswap must take effect
@@ -74,7 +84,8 @@ Here are the checks made by the script before brainswaping:
 * Same block height for both nodes
 * Same minute on both nodes, but not minute 0 (because in this case we cannot tell if the follower is following minutes)
 * No `<nil>` in the process list, on both nodes
-* Calculated brainswap height greater than `ChangeAcksHeight`, if any, on both nodes
+* Calculated brainswap height greater than 
+* If a factomd node runs v6.1.1 (or higher?) `ChangeAcksHeight` is adjusted by `- 1` to account for a bug in this version of factomd
 * IdentityChainID, LocalServerPrivKey and LocalServerPublicKey all set in node1 `factomd.conf`
 * Node1 is an audit or a leader (otherwise it could indicate that a wrong node has been specified)
 * `--noswap` not specified
