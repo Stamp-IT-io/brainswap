@@ -1,9 +1,9 @@
 # Stamp-IT brainswap for factomd
 
-## Factomd v6.1.1-rc1 compatibility
+## Factomd v6.2.1-rc1 compatibility
 
-This version of Stamp-IT brainswap is compatible with factomd v6.1.1-rc1.
-For each node, factomd version is detected and `ChangeAcksHeight` is adjusted by `- 1` to account for a bug in v6.1.1-rc1.
+This version of Stamp-IT brainswap is compatible with factomd v6.1.1-rc1 and v6.2.1-rc1.
+For each node, factomd version is detected and `ChangeAcksHeight` is adjusted by `- 1` to account for a bug in v6.1.1-rc1 and v6.2.1-rc1.
 Make sure to download this version with:
 
       wget https://github.com/Stamp-IT-io/brainswap/raw/factomd-v6.1.1-rc1/brainswap
