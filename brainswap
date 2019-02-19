@@ -47,6 +47,7 @@ function usage() {
 SUDO1=
 SUDO2=
 NOSWAP=
+BLOCK_DELAY=0
 
 while [ "$1" != "" ]; do
 	case "$1" in
@@ -436,23 +437,26 @@ if [ "$MINUTE1" -eq 9 ]; then
 	SWAP_WAIT=$(($SWAP_WAIT + 10))
 	CHANGE_HEIGHT=$(($CHANGE_HEIGHT + 1))
 fi
+# Add a delay of a few few blocks?
+CHANGE_HEIGHT=$(($CHANGE_HEIGHT + $BLOCK_DELAY))
+SWAP_WAIT=$(($SWAP_WAIT + $BLOCK_DELAY * 10))
 
-if [[ "$VERSION1" < v6.1.1 ]]; then
-	CAH1="ChangeAcksHeight = $CHANGE_HEIGHT"
-else
+if [ "$VERSION1" = v6.1.1 -o "$VERSION1" = v6.1.1-rc1 -o "$VERSION1" = v6.2.1 -o "$VERSION1" \> v6.2.1 ]; then
 	# version >= v6.1.1, ChangeAckHeight must be set to the block before the brainswap
 	CAH1="ChangeAcksHeight = $(($CHANGE_HEIGHT-1))"
 	echo -e "Using $CAH1 for $node1" >&2
 	if [ "$FLAGS1" = "A___" ]; then
-		echo -e "WARNING: Brainswaping from an v6.1.1 audit node will probably result in a panic on the destination node." >&2
+		echo -e "WARNING: Brainswaping from an v6.1.1/v6.2.1 audit node will probably result in a panic on the destination node." >&2
 	fi
-fi
-if [[ "$VERSION2" < v6.1.1 ]]; then
-	CAH2="ChangeAcksHeight = $CHANGE_HEIGHT"
 else
+	CAH1="ChangeAcksHeight = $CHANGE_HEIGHT"
+fi
+if [ "$VERSION2" = v6.1.1 -o "$VERSION2" = v6.1.1-rc1 -o "$VERSION2" = v6.2.1 -o "$VERSION2" \> v6.2.1 ]; then
 	# version >= v6.1.1, ChangeAckHeight must be set to the block before the brainswap
 	CAH2="ChangeAcksHeight = $(($CHANGE_HEIGHT-1))"
 	echo -e "Using $CAH2 for $node2" >&2
+else
+	CAH2="ChangeAcksHeight = $CHANGE_HEIGHT"
 fi
 
 # Generating new factomd.conf for node1
