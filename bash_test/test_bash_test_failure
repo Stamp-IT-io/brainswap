@@ -1,0 +1,21 @@
+#!/usr/bin/env run_bash_test
+
+#
+# This is a Bash-test file for the Bash-test framework
+# Use it as an example for your own test cases
+#
+
+echo "The following tests are supposed to fail"
+
+function false_returns_0_fails {
+        run_expect_error 0 false
+}
+false_returns_0_fails
+
+function echo_outputs_wrong_value_fails {
+        VALUE="Hello world"
+        run_expect_output "Wrong value" echo "$VALUE"
+}
+echo_outputs_wrong_value_fails
+
+echo "All the previous tests should have failed"
