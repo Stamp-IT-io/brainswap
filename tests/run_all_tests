@@ -1,0 +1,15 @@
+#!/bin/bash
+
+SELF_DIR="$(dirname "${BASH_SOURCE[0]}")"
+
+# Add the location of the Bash-test framework to the PATH
+# In our case it's in a sibling directory
+PATH="$PATH:$(realpath "$SELF_DIR/../bash_test")"
+
+echo "---------"
+
+for f in $SELF_DIR/test_*; do
+        echo "Executings tests from $f..."
+        $f
+        echo "---------"
+done
