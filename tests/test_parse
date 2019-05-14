@@ -27,7 +27,26 @@ function get_remote_spec_detects_empty_spec () {
 }
 get_remote_spec_detects_empty_spec
 
+function get_jump_spec_detects_empty_spec () {
+        run_expect_error 1 get_jump_spec
+}
+get_jump_spec_detects_empty_spec
+
 function get_remote_host_outputs_host () {
-        run_expect_output "host" get_remote_host "user@host:porte"
+        run_expect_output "host" get_remote_host "user@host:port"
+        run_expect_output "host" get_remote_host "jumpuser@jumphost:jumpport,user@host:port"
 }
 get_remote_host_outputs_host
+
+function get_remote_spec_outputs_remotespec () {
+        run_expect_output "user@host:port" get_remote_spec "user@host:port"
+        run_expect_output "user@host:port" get_remote_spec "jumpuser@jumphost:jumpport,user@host:port"
+        run_expect_output "user@host:port" get_remote_spec "jumpuser1@jumphost1:jumpport1,jumpuser2@jumphost2:jumpport2,user@host:port"
+}
+get_remote_spec_outputs_remotespec
+
+function get_jump_spec_outputs_jumpspec () {
+        run_expect_output "jumpuser@jumphost:jumpport" get_jump_spec "jumpuser@jumphost:jumpport,user@host:port"
+        run_expect_output "jumpuser1@jumphost1:jumpport1,jumpuser2@jumphost2:jumpport2" get_jump_spec "jumpuser1@jumphost1:jumpport1,jumpuser2@jumphost2:jumpport2,user@host:port"
+}
+get_jump_spec_outputs_jumpspec
