@@ -1,11 +1,12 @@
+source "$(dirname "${BASH_SOURCE[0]}")/debug.sh"
+
 # Returns the user@host:port part of a jumpuser@jumphost:jumpport,user@host:port specification
 function get_remote_spec () {
 	local access_spec
 	access_spec=$1 					# e.g. jumpuser@jumphost:jumpport,user@host:port
 
 	if [ -z "$access_spec" ]; then
-		echo "$0/get_remote_spec: empty access_spec" >&2
-		return 1
+		print_error_stack_exit "empty access_spec"
 	fi
 
 	echo "$access_spec" | sed -n "s/^.*,\([^,]*\)$/\1/; p"
@@ -17,8 +18,7 @@ function get_jump_spec () {
 	access_spec=$1 					# e.g. jumpuser@jumphost:jumpport,user@host:port
 
 	if [ -z "$access_spec" ]; then
-		echo "$0/get_remote_spec: empty access_spec" >&2
-		return 1
+		print_error_stack_exit "empty access_spec"
 	fi
 
 	echo "$access_spec" | sed -n "s/^\(.*\),[^,]*$/\1/; p"

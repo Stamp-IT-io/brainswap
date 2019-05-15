@@ -48,7 +48,7 @@ function run_expect_error ()
 
         # Using the name of the calling function
         echo -n "Executing test ${FUNCNAME[1]}... "
-        "$@" >/dev/null 2>&1 </dev/null
+	("$@") >/dev/null 2>&1 </dev/null
         actual_returned_value="$?"
 
         if [ "$actual_returned_value" -eq "$expected_return_value" ]; then
@@ -71,7 +71,7 @@ function run_expect_output ()
 
         # Using the name of the calling function
         echo -n "Executing test ${FUNCNAME[1]}... "
-        actual_output="$("$@")" 2>/dev/null </dev/null
+	actual_output=("$("$@")") 2>/dev/null </dev/null
         actual_returned_value="$?"
 
         if [ "$actual_returned_value" -ne 0 ]; then
