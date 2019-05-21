@@ -1,0 +1,4 @@
+#!/bin/sh
+docker build -t alpine-dropbear .
+echo "To run dropbear: docker run -d --rm alpine-dropbear"
+echo "and then connect with: ssh root@localhost -p 2222"
