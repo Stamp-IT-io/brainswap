@@ -47,7 +47,7 @@ function run_expect_error ()
         shift
 
         # Using the name of the calling function
-        echo -n "Executing test ${FUNCNAME[1]}... "
+        echo -n "Executing test ${FUNCNAME[1]}:${BASH_LINENO[0]}... "
 	("$@") >/dev/null 2>&1 </dev/null
         actual_returned_value="$?"
 
@@ -57,7 +57,7 @@ function run_expect_error ()
         else
                 record_test_failed
                 echo "failed"
-                echo -ne "\tAssertion failed at ${BASH_SOURCE[1]}:${BASH_LINENO[1]}: "
+                echo -ne "\tAssertion failed at ${BASH_SOURCE[1]}:${BASH_LINENO[0]}: "
                 echo -e "expected return value $expected_return_value, got $actual_returned_value"
         fi
 }
@@ -70,7 +70,7 @@ function run_expect_output ()
         shift
 
         # Using the name of the calling function
-        echo -n "Executing test ${FUNCNAME[1]}... "
+        echo -n "Executing test ${FUNCNAME[1]}:${BASH_LINENO[0]}... "
 	actual_output=("$("$@")") 2>/dev/null </dev/null
         actual_returned_value="$?"
 
@@ -83,6 +83,6 @@ function run_expect_output ()
         else
                 record_test_failed
                 echo "failed"
-                echo -e "\tAssertion failed at ${BASH_SOURCE[1]}:${BASH_LINENO[1]}: Unexpected output"
+                echo -e "\tAssertion failed at ${BASH_SOURCE[1]}:${BASH_LINENO[0]}: Unexpected output"
         fi
 }
