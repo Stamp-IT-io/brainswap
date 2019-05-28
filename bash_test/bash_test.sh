@@ -58,7 +58,7 @@ function run_expect_error ()
                 record_test_failed
                 echo "failed"
                 echo -ne "\tAssertion failed at ${BASH_SOURCE[1]}:${BASH_LINENO[0]}: "
-                echo -e "expected return value $expected_return_value, got $actual_returned_value"
+                echo -e "Expected return value $expected_return_value, got $actual_returned_value"
         fi
 }
 
@@ -83,6 +83,7 @@ function run_expect_output ()
         else
                 record_test_failed
                 echo "failed"
-                echo -e "\tAssertion failed at ${BASH_SOURCE[1]}:${BASH_LINENO[0]}: Unexpected output"
+                echo -ne "\tAssertion failed at ${BASH_SOURCE[1]}:${BASH_LINENO[0]}: "
+                echo -e "Expected output value $expected_output, got $actual_output"
         fi
 }
