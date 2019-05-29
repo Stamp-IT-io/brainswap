@@ -12,7 +12,10 @@ function _get_access_spec_part () {
 		print_error_stack_exit "empty access_spec"
 	fi
 
-	echo "$access_spec" | sed -nE "s/${ACCESS_SPEC_REGEX}/\\${part}/; p"
+	echo "$access_spec" | sed -nE "s/${ACCESS_SPEC_REGEX}/\\${part}/; T bad; p; q0; :bad; q2"
+	if [ $? == 2]; then
+		print_error_stack_exit "bad acces_spec: $1"
+	fi
 }
 
 # Returns the jumpuser@jumphost:jumpport part of a jumpuser@jumphost:jumpport,user@host:port specification

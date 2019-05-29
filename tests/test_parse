@@ -4,21 +4,17 @@ SELF_DIR="$(dirname "${BASH_SOURCE[0]}")"
 
 source $SELF_DIR/../parse.sh
 
-function get_remote_spec_detects_empty_spec () {
+function get_part_detect_empty_spec () {
         run_expect_error 1 get_remote_spec
-}
-get_remote_spec_detects_empty_spec
-
-function get_jump_spec_detects_empty_spec () {
         run_expect_error 1 get_jump_spec
 }
-get_jump_spec_detects_empty_spec
+get_part_detect_empty_spec
 
-function get_remote_host_outputs_host () {
-        run_expect_output "host" get_remote_host "user@host:port"
-        run_expect_output "host" get_remote_host "jumpuser@jumphost:jumpport,user@host:port"
+function get_part_detect_bad_spec () {
+        run_expect_error 2 get_remote_spec "@@@"
+        run_expect_error 2 get_jump_spec "@@@"
 }
-get_remote_host_outputs_host
+get_part_detect_bad_spec
 
 function get_remote_spec_outputs_remotespec () {
         run_expect_output "user@host:port" get_remote_spec "user@host:port"
@@ -33,3 +29,21 @@ function get_jump_spec_outputs_jumpspec () {
         run_expect_output "jumpuser1@jumphost1:jumpport1,jumpuser2@jumphost2:jumpport2" get_jump_spec "jumpuser1@jumphost1:jumpport1,jumpuser2@jumphost2:jumpport2,user@host:port"
 }
 get_jump_spec_outputs_jumpspec
+
+function get_remote_host_outputs_host () {
+        run_expect_output "host" get_remote_host "user@host:port"
+        run_expect_output "host" get_remote_host "jumpuser@jumphost:jumpport,user@host:port"
+}
+get_remote_host_outputs_host
+
+function get_remote_userhost_outputs_userhost () {
+        run_expect_output "user@host" get_remote_userhost "user@host:port"
+        run_expect_output "user@host" get_remote_userhost "jumpuser@jumphost:jumpport,user@host:port"
+}
+get_remote_userhost_outputs_userhost
+
+function get_remote_host_outputs_port () {
+        run_expect_output "port" get_remote_port "user@host:port"
+        run_expect_output "port" get_remote_port "jumpuser@jumphost:jumpport,user@host:port"
+}
+get_remote_host_outputs_port
