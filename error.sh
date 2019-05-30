@@ -11,6 +11,6 @@ function print_error_stack_exit () {
 	echo "Error: $1" >&2
 	echo "Stack:" >&2
 	get_stack >&2
-	exit 1
+	exit ${2:-1}	# 1 is the default exit code
 }
 
