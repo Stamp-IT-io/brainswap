@@ -30,5 +30,10 @@ function dropbear_ssh_output_ok () {
 }
 dropbear_ssh_output_ok
 
+function dropbear_ssh_input_ok () {
+        echo hello | run_expect_output "hello" ssh root@localhost -p 2222 cat
+}
+dropbear_ssh_input_ok
+
 # Tear down after the tests
 docker stop test1

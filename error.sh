@@ -1,3 +1,5 @@
+# Stamp-IT brainswap  Copyright 2018 Stamp-IT Blockchain Solution inc.
+
 function get_stack () {
 	# to avoid noise we start with 1 to skip get_stack caller
 	local i

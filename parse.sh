@@ -1,3 +1,5 @@
+# Stamp-IT brainswap  Copyright 2018 Stamp-IT Blockchain Solution inc.
+
 source "$(dirname "${BASH_SOURCE[0]}")/error.sh"
 
 ACCESS_SPEC_REGEX='^((.+),)?((([^,@]+)@)?([^,@:]+)(:([^,:]+))?)$'
