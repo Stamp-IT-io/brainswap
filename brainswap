@@ -139,7 +139,7 @@ SED_CAH_SCRIPT='s/^[[:space:]]*ChangeAcksHeight[[:space:]]*=[[:space:]]*\(\([0-9
 
 
 echo "This is a pre-alpha version of brainswap. You should not use it except to give feedback." >&2
-#exit 1
+exit 1
 
 
 #########
