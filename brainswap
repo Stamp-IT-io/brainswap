@@ -16,6 +16,7 @@
 # DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+source "$(dirname "${BASH_SOURCE[0]}")/ssh.sh"
 
 # Uncomment the following line to turn on debugging
 #set -x
@@ -102,33 +103,6 @@ if [ -z "$node1" -o -z "$node2" ]; then
 	exit 2
 fi
 
-j1="${node1%,*}"
-if [ -n "$j1" -a "$j1" != "$node1" ]; then
-	node1="${node1##*,}"
-	jump1="-J $j1"
-fi
-
-j2="${node2%,*}"
-if [ -n "$j2" -a "$j2" != "$node2" ]; then
-	node2="${node2##*,}"
-	jump2="-J $j2"
-fi
-
-# Extract nodes info (with remote port if specified)
-node1_userhost="${node1%:*}"
-if echo "$node1" | grep -q -i ":[0-9]*$"; then
-	node1_port="-p ${node1#*:}"
-else
-	node1_port=""
-fi
-
-node2_userhost="${node2%:*}"
-if echo "$node2" | grep -q -i ":[0-9]*$"; then
-	node2_port="-p ${node2#*:}"
-else
-	node2_port=""
-fi
-
 # We do not want to brainswap a node with itself!
 if [ "$node1" = "$node2" ]; then
 	echo "$0: $node1 and $node2 are the same nodes, cannot brainswap." >&2
@@ -162,11 +136,17 @@ SED_ID_SCRIPT='s/^[[:space:]]*IdentityChainID[[:space:]]*=[[:space:]]*\(\([0-9a-
 SED_CAH_SCRIPT='s/^[[:space:]]*ChangeAcksHeight[[:space:]]*=[[:space:]]*\(\([0-9]\)*\)[[:space:]]*$/\1/p'
 
 
+
+
+echo "This is a pre-alpha version of brainswap. You should not use it except to give feedback." >&2
+#exit 1
+
+
 #########
 # Accessing node 1 to obtain some informations...
 
 # Command to login to node1
-SSH1="ssh $jump1 $node1_userhost $node1_port"
+SSH1="do_ssh $node1"
 
 [ "$QUIET" != 1 ] && echo "Checking $CONF_PATH is writable on $node1..." >&2
 
@@ -299,7 +279,7 @@ fi
 # Accessing node 2 to obtain some informations...
 
 # Command to login to node2
-SSH2="ssh $jump2 $node2_userhost $node2_port"
+SSH2="do_ssh $node2"
 
 [ "$QUIET" != 1 ] && echo "Checking $CONF_PATH is writable on $node2..." >&2
 

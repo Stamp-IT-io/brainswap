@@ -9,18 +9,18 @@ docker run -d --rm --name test1 -p 2222:22 alpine-dropbear
 
 # Tests
 function do_ssh_false_return_ok () {
-        run_expect_error 0 do_ssh root@localhost -p 2222 true
-        run_expect_error 1 do_ssh root@localhost -p 2222 false
+        run_expect_error 0 do_ssh root@localhost:2222 true
+        run_expect_error 1 do_ssh root@localhost:2222 false
 }
 do_ssh_false_return_ok
 
 function do_ssh_output_ok () {
-        run_expect_output "hello" do_ssh root@localhost -p 2222 echo hello
+        run_expect_output "hello" do_ssh root@localhost:2222 echo hello
 }
 do_ssh_output_ok
 
 function do_ssh_input_ok () {
-        echo hello | run_expect_output "hello" do_ssh root@localhost -p 2222 cat
+        echo hello | run_expect_output "hello" do_ssh root@localhost:2222 cat
 }
 do_ssh_input_ok
 
