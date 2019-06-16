@@ -16,7 +16,9 @@
 # DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+source "$(dirname "${BASH_SOURCE[0]}")/error.sh"
 source "$(dirname "${BASH_SOURCE[0]}")/ssh.sh"
+source "$(dirname "${BASH_SOURCE[0]}")/factomd-conf.sh"
 
 # Uncomment the following line to turn on debugging
 #set -x
@@ -59,12 +61,16 @@ while [ "$1" != "" ]; do
 	"--sudo")
 		SUDO1=sudo
 		SUDO2=sudo
+		sudo1="--sudo"
+		sudo2="--sudo"
 		;;
 	"--sudo1")
 		SUDO1=sudo
+		sudo1="--sudo"
 		;;
 	"--sudo2")
 		SUDO2=sudo
+		sudo2="--sudo"
 		;;
 	"--noswap")
 		NOSWAP=1
@@ -105,8 +111,7 @@ fi
 
 # We do not want to brainswap a node with itself!
 if [ "$node1" = "$node2" ]; then
-	echo "$0: $node1 and $node2 are the same nodes, cannot brainswap." >&2
-	exit 1
+	print_error_stack_exit "$node1 and $node2 are the same nodes, cannot brainswap."
 fi
 
 # Command to get details about locally running factomd
@@ -148,60 +153,32 @@ exit 1
 # Command to login to node1
 SSH1="do_ssh $node1"
 
-[ "$QUIET" != 1 ] && echo "Checking $CONF_PATH is writable on $node1..." >&2
-
-# Check that we can connect to node1
-if ! $SSH1 $SUDO1 test -w $CONF_PATH; then
-	echo "$0: Cannot connect to $node1 or $CONF_PATH not writable." >&2
-	exit 1
-fi
-
-[ "$QUIET" != 1 ] && echo "Getting $CONF_PATH from $node1..." >&2
+# Make sure config is writable before any modification si done
+ensure_factomd_conf_writable $sudo1 $node1
 
 # Obtain config from node1
-CONF1=$($SSH1 $SUDO1 cat $CONF_PATH)
-
-if [ "$?" -ne 0 ]; then
-	echo "$0: Cannot get factomd.conf from $node1." >&2
-	exit 1
-fi
-
-# Extract Network from node1
-NET1=$(echo "$CONF1" | grep -i '^[[:space:]]*Network')
-NET1=${NET1:-MAIN}
-
-# Extract Identity from node1
-IdCId1=$(echo "$CONF1" | grep -i '^[[:space:]]*IdentityChainID')
-LSPrivK1=$(echo "$CONF1" | grep -i '^[[:space:]]*LocalServerPrivKey')
-LSPubK1=$(echo "$CONF1" | grep -i '^[[:space:]]*LocalServerPublicKey')
-OldCAH1_LINE=$(echo "$CONF1" | grep -i '^[[:space:]]*ChangeAcksHeight')
-OldCAH1=$(echo "$OldCAH1_LINE" | sed -n $SED_CAH_SCRIPT)
-OldCAH1=${OldCAH1:-0}
-Id1=$(echo "$IdCId1" | sed -n $SED_ID_SCRIPT)
+get_factomd_conf $sudo1 $node1 node1
 
 # Find the place where the new identity will be inserted in config file (CONF1_APPEND is a sed script)
-if echo "$CONF1" | grep -q -i '^[[:space:]]*;*[[:space:]]*BRAINSWAP_ID_BELOW'; then
+if echo "$node1_conf" | grep -q -i '^[[:space:]]*;*[[:space:]]*BRAINSWAP_ID_BELOW'; then
 	CONF1_APPEND='/^[[:space:]]*;*[[:space:]]*BRAINSWAP_ID_BELOW/a\'
 else
-	if echo "$CONF1" | grep -q -i '^[[:space:]]*\[app\]'; then
+	if echo "$node1_conf" | grep -q -i '^[[:space:]]*\[app\]'; then
 		CONF1_APPEND='/^[[:space:]]*\[app\]/a\'
 	else
-		echo "$0: $node1 factomd.conf has neither [app] section nor commented line with BRAINSWAP_ID_BELOW." >&2
-		exit 1
+		print_error_stack_exit "$node1 factomd.conf has neither [app] section nor commented line with BRAINSWAP_ID_BELOW."
 	fi
 fi
 
 # Ensure an identiy is in node1 config file
-if [ -z "$IdCId1" -o -z "$LSPrivK1" -o -z "$LSPubK1" ]; then
+if [ -z "$node1_IdCId_line" -o -z "$node1_LSPrivK_line" -o -z "$node1_LSPubK_line" ]; then
 	# Technically, we could do a brainswap, but it is probably not what is intended
-	echo "$0: $node1 has incomplete identity set in factomd.conf." >&2
-	exit 1
+	print_error_stack_exit "$node1 has incomplete identity set in factomd.conf."
 fi
 
-# Ensure $Id1 looks like an identity chain Id
-if ! echo "$Id1" | egrep -q "^[0-9a-f]{64}$"; then
-	echo "$0: $node1 Id $Id1 does not look like an identity chain Id." >&2
-	exit 1
+# Ensure $node1_IdCId looks like an identity chain Id
+if ! echo "$node1_IdCId" | egrep -q "^[0-9a-f]{64}$"; then
+	print_error_stack_exit "$node1 Id $node1_IdCId does not look like an identity chain Id."
 fi
 
 [ "$QUIET" != 1 ] && echo "Getting factomd version from $node1..." >&2
@@ -210,8 +187,7 @@ fi
 VERSION1=$($SSH1 $WGET_HOME | sed -n "$SED_VERSION_SCRIPT")
 
 if ! echo "$VERSION1" | grep -q '^v[0-9]*[.][0-9]*[.][0-9]*'; then
-	echo "$0: Cannot get factomd version from $node1 (is it running?)" >&2
-	exit 1
+	print_error_stack_exit "cannot get factomd version from $node1 (is it running?)"
 fi
 
 [ "$QUIET" != 1 ] && echo "Getting factomd details from $node1..." >&2
@@ -220,13 +196,11 @@ fi
 DETAILS=$($SSH1 $WGET_DETAILS | sed -n "$SED_DETAILS_SCRIPT")
 
 if [ "$DETAILS" = "" ]; then
-	echo "$0: Cannot get details about factomd from $node1 (is it running?)" >&2
-	exit 1
+	print_error_stack_exit "cannot get details about factomd from $node1 (is it running?)"
 fi
 
 if ! echo "$DETAILS" | egrep '^[^ ]{4} [0-9]* [0-9]* [0-9]* [0-9]* [0-9]' >/dev/null; then
-	echo "$0: Cannot parse details about factomd from $node1." >&2
-	exit 1
+	print_error_stack_exit "cannot parse details about factomd from $node1."
 fi
 
 # Extract information about factomd from node1
@@ -238,14 +212,12 @@ PROCESS_LIST=$(echo "$DETAILS" | cut -d\  -f7)
 # Ensure node1 is an authority node and operating
 if [ "$FLAGS" != "A___" -a "$FLAGS" != "L___" ]; then
 	# We could do a brainswap, but it is probably not what is intended
-	echo "$0: $node1 is not an authority node (or in ignore mode) no need for brainswap ($FLAGS)." >&2
-	exit 1
+	print_error_stack_exit "$node1 is not an authority node (or in ignore mode) no need for brainswap ($FLAGS)."
 fi
 
 # Ensure there is no <nil> in the process list of node1
 if [ "$PROCESS_LIST" != "OKOKOK" ]; then
-	echo "$0: $node1 process list is incomplete, there might be some network instability ($PROCESS_LIST)." >&2
-	exit 1
+	print_error_stack_exit "$node1 process list is incomplete, there might be some network instability ($PROCESS_LIST)."
 fi
 
 # Ensure $MINUTE1 is a number between 0 and 9
@@ -253,26 +225,22 @@ if [ 0 -le "$MINUTE1" -a "$MINUTE1" -le "9" ]; then
 	# Here we are sure $MINUTE1 is a number
 	true
 else
-	echo "$0: $node1 minute $MINUTE1, is not a number." >&2
-	exit 1
+	print_error_stack_exit "$node1 minute $MINUTE1, is not a number."
 fi
 
 # Ensure $NEXT_HEIGHT1 is a block number
 if ! echo "$NEXT_HEIGHT1" | egrep -q "^[0-9]{5,7}$"; then
-	echo "$0: $node1 next height $NEXT_HEIGHT1 does not look like a block number." >&2
-	exit 1
+	print_error_stack_exit "$node1 next height $NEXT_HEIGHT1 does not look like a block number."
 fi
 
 # Ensure no brainswap is pending on node1
-if [ "$NEXT_HEIGHT1" -le "$OldCAH1" ]; then
-	echo "$0: $node1 next height $NEXT_HEIGHT1 is not greater than config ChangeAcksHeight $OldCAH1 (pending brainswap?)" >&2
-	exit 1
+if [ "$NEXT_HEIGHT1" -le "$node1_CAH" ]; then
+	print_error_stack_exit "$node1 next height $NEXT_HEIGHT1 is not greater than config ChangeAcksHeight $node1_CAH (pending brainswap?)"
 fi
 
 # During minute 0 we cannot tell if the nodes are really following minutes, so we do not initiate a brainswap
 if [ "$MINUTE1" -eq "0" ]; then
-	echo "$0: $node1 in minute 0, wait for one minute and try again." >&2
-	exit 1
+	print_error_stack_exit "$node1 in minute 0, wait for one minute and try again."
 fi
 
 #########
@@ -281,60 +249,32 @@ fi
 # Command to login to node2
 SSH2="do_ssh $node2"
 
-[ "$QUIET" != 1 ] && echo "Checking $CONF_PATH is writable on $node2..." >&2
-
-# Check that we can connect to node2
-if ! $SSH2 $SUDO2 test -w $CONF_PATH; then
-	echo "$0: Cannot connect to $node2 or $CONF_PATH not writable." >&2
-	exit 1
-fi
-
-[ "$QUIET" != 1 ] && echo "Getting $CONF_PATH from $node2..." >&2
+# Make sure config is writable before any modification si done
+ensure_factomd_conf_writable $sudo2 $node2
 
 # Obtain config from node2
-CONF2=$($SSH2 $SUDO2 cat $CONF_PATH)
-
-if [ "$?" -ne 0 ]; then
-	echo "$0: Cannot get factomd.conf from $node2." >&2
-	exit 1
-fi
-
-# Extract Network from node2
-NET2=$(echo "$CONF2" | grep -i '^[[:space:]]*Network')
-NET2=${NET2:-MAIN}
-
-# Extract Identity from node2
-IdCId2=$(echo "$CONF2" | grep -i '^[[:space:]]*IdentityChainID')
-LSPrivK2=$(echo "$CONF2" | grep -i '^[[:space:]]*LocalServerPrivKey')
-LSPubK2=$(echo "$CONF2" | grep -i '^[[:space:]]*LocalServerPublicKey')
-OldCAH2_LINE=$(echo "$CONF2" | grep -i '^[[:space:]]*ChangeAcksHeight')
-OldCAH2=$(echo "$OldCAH2_LINE" | sed -n $SED_CAH_SCRIPT)
-OldCAH2=${OldCAH2:-0}
-Id2=$(echo "$IdCId2" | sed -n $SED_ID_SCRIPT)
+get_factomd_conf $sudo2 $node2 node2
 
 # Ensure node1 and node 2 are on the same network
-if [ "$NET1" != "$NET2" ]; then
-	echo "$0: $node1 and $node2 are on two different networks, cannot brainswap." >&2
-	exit 1
+if [ "$node1_Net" != "$node2_Net" ]; then
+	print_error_stack_exit "$node1 and $node2 are on two different networks, cannot brainswap."
 fi
 
 # Find the place where the new identity will be inserted in config file (CONF2_APPEND is a sed script)
-if echo "$CONF2" | grep -q -i '^[[:space:]]*;*[[:space:]]*BRAINSWAP_ID_BELOW'; then
+if echo "$node2_conf" | grep -q -i '^[[:space:]]*;*[[:space:]]*BRAINSWAP_ID_BELOW'; then
 	CONF2_APPEND='/^[[:space:]]*;*[[:space:]]*BRAINSWAP_ID_BELOW/a\'
 else
-	if echo "$CONF2" | grep -q -i '^[[:space:]]*\[app\]'; then
+	if echo "$node2_conf" | grep -q -i '^[[:space:]]*\[app\]'; then
 		CONF2_APPEND='/^[[:space:]]*\[app\]/a\'
 	else
-		echo "$0: $node2 factomd.conf has neither [app] section nor commented line with BRAINSWAP_ID_BELOW." >&2
-		exit 1
+		print_error_stack_exit "$node2 factomd.conf has neither [app] section nor commented line with BRAINSWAP_ID_BELOW."
 	fi
 fi
 
 # For node2, we do not expect an Identity in config file (but there might be one, it's Ok)...
 # ...but we ensure node1 and node 2 have not the same identity in their config files
-if [ "$Id1" = "$Id2" ]; then
-	echo "$0: $node1 and $node2 have the same identity in their config files. (Same node?)" >&2
-	exit 1
+if [ "$node1_IdCId" = "$node2_IdCId" ]; then
+	print_error_stack_exit "$node1 and $node2 have the same identity in their config files. (Same node?)"
 fi
 
 [ "$QUIET" != 1 ] && echo "Getting factomd version from $node2..." >&2
@@ -343,8 +283,7 @@ fi
 VERSION2=$($SSH2 $WGET_HOME | sed -n "$SED_VERSION_SCRIPT")
 
 if ! echo "$VERSION2" | grep -q '^v[0-9]*[.][0-9]*[.][0-9]*'; then
-	echo "$0: Cannot get factomd version from $node2 (is it running?)" >&2
-	exit 1
+	print_error_stack_exit "$0: Cannot get factomd version from $node2 (is it running?)"
 fi
 
 [ "$QUIET" != 1 ] && echo "Getting factomd details from $node2..." >&2
@@ -353,8 +292,7 @@ fi
 DETAILS=$($SSH2 $WGET_DETAILS | sed -n "$SED_DETAILS_SCRIPT")
 
 if [ "$DETAILS" = "" ]; then
-	echo "$0: $node2: cannot get details about factomd (is it running?)" >&2
-	exit 1
+	print_error_stack_exit "$0: $node2: cannot get details about factomd (is it running?)"
 fi
 
 # Extract information about factomd from node2
@@ -365,14 +303,12 @@ PROCESS_LIST=$(echo "$DETAILS" | cut -d\  -f7)
 
 # Ensure node2 is ready for brainswap
 if [ "$FLAGS" != "A___" -a "$FLAGS" != "L___" -a "$FLAGS" != "____" ]; then
-	echo "$0: $node2 is not ready for brainswap ($FLAGS)." >&2
-	exit 1
+	print_error_stack_exit "$0: $node2 is not ready for brainswap ($FLAGS)."
 fi
 
 # Ensure there is no <nil> in the process list of node2
 if [ "$PROCESS_LIST" != "OKOKOK" ]; then
-	echo "$0: $node2 process list is incomplete, there might be some network instability ($PROCESS_LIST)." >&2
-	exit 1
+	print_error_stack_exit "$0: $node2 process list is incomplete, there might be some network instability ($PROCESS_LIST)."
 fi
 
 # Ensure $MINUTE2 is a number between 0 and 9
@@ -380,32 +316,27 @@ if [ 0 -le "$MINUTE2" -a "$MINUTE2" -le "9" ]; then
 	# Here we are sure $MINUTE2 is a number
 	true
 else
-	echo "$0: $node2 minute $MINUTE2, is not a number." >&2
-	exit 1
+	print_error_stack_exit "$0: $node2 minute $MINUTE2, is not a number."
 fi
 
 # Ensure $NEXT_HEIGHT2 is a block number
 if ! echo "$NEXT_HEIGHT2" | egrep -q "^[0-9]{5,7}$"; then
-	echo "$0: $node2 next height $NEXT_HEIGHT2 does not seem to be a block number." >&2
-	exit 1
+	print_error_stack_exit "$0: $node2 next height $NEXT_HEIGHT2 does not seem to be a block number."
 fi
 
 # Ensure no brainswap is pending on node 2
-if [ "$NEXT_HEIGHT2" -le "$OldCAH2" ]; then
-	echo "$0: $node2 next height $NEXT_HEIGHT2 not greater than config ChangeAcksHeight $OldCAH2 (pending brainswap?)" >&2
-	exit 1
+if [ "$NEXT_HEIGHT2" -le "$node2_CAH" ]; then
+	print_error_stack_exit "$0: $node2 next height $NEXT_HEIGHT2 not greater than config ChangeAcksHeight $node2_CAH (pending brainswap?)"
 fi
 
 # Ensure node1 and node2 are on the same block height
 if [ "$NEXT_HEIGHT1" != "$NEXT_HEIGHT2" ]; then
-	echo "$0: $node1 and $node2 are not on the same block (next: $NEXT_HEIGHT1, $NEXT_HEIGHT2) try again in a few seconds." >&2
-	exit 1
+	print_error_stack_exit "$0: $node1 and $node2 are not on the same block (next: $NEXT_HEIGHT1, $NEXT_HEIGHT2) try again in a few seconds."
 fi
 
 # Ensure node1 and node2 are on the same minute
 if [ "$MINUTE1" != "$MINUTE2" ]; then
-	echo "$0: $node1 and $node2 are not on the same minute ($MINUTE1, $MINUTE2) try again in a few seconds." >&2
-	exit 1
+	print_error_stack_exit "$0: $node1 and $node2 are not on the same minute ($MINUTE1, $MINUTE2) try again in a few seconds."
 fi
 
 # Calculate time before swap and ChangeAcksHeight
@@ -422,43 +353,39 @@ SWAP_WAIT=$(($SWAP_WAIT + $BLOCK_DELAY * 10))
 
 if [ "$VERSION1" = v6.1.1 -o "$VERSION1" = v6.1.1-rc1 -o "$VERSION1" = v6.2.1-rc1 ]; then
 	# Brainswap is not supported on these versions
-	echo "$0: Brainswap not supported with factomd $VERSION1." >&2
-	exit 1
+	print_error_stack_exit "$0: Brainswap not supported with factomd $VERSION1."
 fi
 CAH1="ChangeAcksHeight = $CHANGE_HEIGHT"
 if [ "$VERSION2" = v6.1.1 -o "$VERSION2" = v6.1.1-rc1 -o "$VERSION2" = v6.2.1-rc1 ]; then
 	# Brainswap is not supported on these versions
-	echo "$0: Brainswap not supported with factomd $VERSION2." >&2
-	exit 1
+	print_error_stack_exit "$0: Brainswap not supported with factomd $VERSION2."
 fi
 CAH2="ChangeAcksHeight = $CHANGE_HEIGHT"
 
 # Generating new factomd.conf for node1
-NEWCONF1=$(echo "$CONF1" | grep -i -v '^[[:space:]]*IdentityChainID' | grep -i -v '^[[:space:]]*LocalServerPrivKey' | grep -i -v '^[[:space:]]*LocalServerPublicKey' | grep -i -v '^[[:space:]]*ChangeAcksHeight')
+NEWCONF1=$(echo "$node1_conf" | grep -i -v '^[[:space:]]*IdentityChainID' | grep -i -v '^[[:space:]]*LocalServerPrivKey' | grep -i -v '^[[:space:]]*LocalServerPublicKey' | grep -i -v '^[[:space:]]*ChangeAcksHeight')
 NEWCONF1=$(echo "$NEWCONF1" | sed "$CONF1_APPEND
-$IdCId2\\
-$LSPrivK2\\
-$LSPubK2\\
+$node2_IdCId_line\\
+$node2_LSPrivK_line\\
+$node_LSPubK_line\\
 $CAH1")
 
 if [ "$?" != 0 ]; then
 	# Maybe due to a bad factomd.conf
-	echo "$0: Error while generating new factomd.conf for node1, aborting." >&2
-	exit 1
+	print_error_stack_exit "$0: Error while generating new factomd.conf for node1, aborting."
 fi
 
 # Generating new factomd.conf for node2
-NEWCONF2=$(echo "$CONF2" | grep -i -v '^[[:space:]]*IdentityChainID' | grep -i -v '^[[:space:]]*LocalServerPrivKey' | grep -i -v '^[[:space:]]*LocalServerPublicKey' | grep -i -v '^[[:space:]]*ChangeAcksHeight')
+NEWCONF2=$(echo "$node2_conf" | grep -i -v '^[[:space:]]*IdentityChainID' | grep -i -v '^[[:space:]]*LocalServerPrivKey' | grep -i -v '^[[:space:]]*LocalServerPublicKey' | grep -i -v '^[[:space:]]*ChangeAcksHeight')
 NEWCONF2=$(echo "$NEWCONF2" | sed "$CONF2_APPEND
-$IdCId1\\
-$LSPrivK1\\
-$LSPubK1\\
+$node1_IdCId_line\\
+$node1_LSPrivK_line\\
+$node1_LSPubK_line\\
 $CAH2")
 
 if [ "$?" != 0 ]; then
 	# Maybe due to a bad factomd.conf
-	echo "$0: Error while generating new factomd.conf for node2, aborting." >&2
-	exit 1
+	print_error_stack_exit "$0: Error while generating new factomd.conf for node2, aborting."
 fi
 
 ####################
@@ -467,10 +394,10 @@ if [ "$QUIET" != 1 ]; then
 	echo "Ready to brainswap at block height $CHANGE_HEIGHT, in about $SWAP_WAIT minutes:" >&2
 	echo "--------" >&2
 	echo "Node1: $node1:" >&2
-	echo -e "$IdCId1\n$LSPrivK1\n$LSPubK1" >&2
+	echo -e "$node1_IdCId_line\n$node1_LSPrivK_line\n$node1_LSPubK_line" >&2
 	echo "--------" >&2
 	echo "Node2: $node2:" >&2
-	echo -e "$IdCId2\n$LSPrivK2\n$LSPubK2" >&2
+	echo -e "$node2_IdCId_line\n$node2_LSPrivK_line\n$node_LSPubK_line" >&2
 	echo "--------" >&2
 fi
 
@@ -483,15 +410,13 @@ fi
 [ "$QUIET" != 1 ] && echo "Rewriting factomd.conf on $node2..." >&2
 
 if ! echo "$NEWCONF2" | $SSH2 $SUDO2 sh -c '"cat >'"$CONF_PATH"'"'; then
-	echo "$0: Error overwriting $CONF_PATH on $node2, BRAINSWAP FAILED, you must check that config was not overwritten." >&2
-	exit 1
+	print_error_stack_exit "$0: Error overwriting $CONF_PATH on $node2, BRAINSWAP FAILED, you must check that config was not overwritten."
 fi
 
 [ "$QUIET" != 1 ] && echo "Rewriting factomd.conf on $node1..." >&2
 
 if ! echo "$NEWCONF1" | $SSH1 $SUDO1 sh -c '"cat >'"$CONF_PATH"'"'; then
-	echo "$0: Error overwriting $CONF_PATH on $node1, BRAINSWAP FAILED, you must check that both nodes do not have the same identity." >&2
-	exit 1
+	print_error_stack_exit "$0: Error overwriting $CONF_PATH on $node1, BRAINSWAP FAILED, you must check that both nodes do not have the same identity."
 fi
 
 echo "Brainswap initiated successfully for block $CHANGE_HEIGHT, in about $SWAP_WAIT minutes"

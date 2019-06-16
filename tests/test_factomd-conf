@@ -1,0 +1,35 @@
+#!/usr/bin/env run_bash_test
+
+SELF_DIR="$(dirname "${BASH_SOURCE[0]}")"
+
+source $SELF_DIR/../ssh.sh
+source $SELF_DIR/../factomd-conf.sh
+
+function no_remote_return_false() {
+        run_expect_error 1 get_factomd_conf root@localhost:2222
+        run_expect_error 1 ensure_factomd_conf_writable root@localhost:2222
+}
+no_remote_return_false
+
+# Setup for the following tests
+docker run -d --rm --name test1 -p 2222:22 alpine-dropbear
+docker exec test1 mkdir -p "$(dirname "${CONF_PATH}")"
+
+function no_conf_return_false() {
+        run_expect_error 1 get_factomd_conf root@localhost:2222
+        run_expect_error 1 ensure_factomd_conf_writable root@localhost:2222
+}
+no_conf_return_false
+
+# More setup for the following tests
+docker exec -i test1 sh -c "cat >${CONF_PATH}" <$SELF_DIR/factomd-conf/testnet-id1-dos.conf
+docker exec -i test1 chmod 600 "${CONF_PATH}"
+
+function mod_600_return_true() {
+        run_expect_error 0 get_factomd_conf root@localhost:2222
+        run_expect_error 0 ensure_factomd_conf_writable root@localhost:2222
+}
+mod_600_return_true
+
+# Tear down after the tests
+docker stop test1 >/dev/null

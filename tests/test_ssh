@@ -25,4 +25,4 @@ function do_ssh_input_ok () {
 do_ssh_input_ok
 
 # Tear down after the tests
-docker stop test1
+docker stop test1 >/dev/null
