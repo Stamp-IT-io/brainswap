@@ -55,7 +55,7 @@ function get_factomd_conf() {
 	eval ${prefix}'_conf="$conf_content"'
 	eval ${prefix}'_IdCId_line=$(echo "$conf_content" | '"grep -i '^[[:space:]]*IdentityChainID')"
 	eval ${prefix}'_IdCId=$(echo $'${prefix}'_IdCId_line | sed -n $SED_ID_SCRIPT)'
-	eval ${prefix}'_IdCId_Short=$(echo $'${prefix}'_IdCId | cut -c 7-12)'
+	eval ${prefix}'_IdCId_short=$(echo $'${prefix}'_IdCId | cut -c 7-12)'
 	eval ${prefix}'_LSPrivK_line=$(echo "$conf_content" | '"grep -i '^[[:space:]]*LocalServerPrivKey')"
 	eval ${prefix}'_LSPrivK=$(echo $'${prefix}'_LSPrivK_line | sed -n $SED_PRIV_SCRIPT)'
 	eval ${prefix}'_LSPubK_line=$(echo "$conf_content" | '"grep -i '^[[:space:]]*LocalServerPublicKey')"

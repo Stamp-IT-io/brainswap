@@ -66,13 +66,30 @@ function run_expect_output ()
 {
         local expected_output
         local expected_output actual_output
+	if [ "$1" == "--debug" ]; then
+		DEBUG_CMD=1
+		shift
+	else
+		DEBUG_CMD=0
+	fi
         expected_output="$1"
         shift
 
         # Using the name of the calling function
         echo -n "Executing test ${FUNCNAME[1]}:${BASH_LINENO[0]}... "
-	actual_output=("$("$@")") 2>/dev/null </dev/null
+	if [ "$DEBUG_CMD" == "1" ]; then
+	       	set -x
+	else
+		exec 99>&2
+		exec 2>/dev/null
+	fi
+	actual_output=("$("$@")") </dev/null
         actual_returned_value="$?"
+	if [ "$DEBUG_CMD" == "1" ]; then 
+		set +x
+	else
+		exec 2>&99
+	fi
 
         if [ "$actual_returned_value" -ne 0 ]; then
                 record_test_failed
