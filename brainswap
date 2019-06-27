@@ -176,11 +176,6 @@ if [ -z "$node1_IdCId_line" -o -z "$node1_LSPrivK_line" -o -z "$node1_LSPubK_lin
 	print_error_stack_exit "$node1 has incomplete identity set in factomd.conf."
 fi
 
-# Ensure $node1_IdCId looks like an identity chain Id
-if ! echo "$node1_IdCId" | egrep -q "^[0-9a-f]{64}$"; then
-	print_error_stack_exit "$node1 Id $node1_IdCId does not look like an identity chain Id."
-fi
-
 [ "$QUIET" != 1 ] && echo "Getting factomd version from $node1..." >&2
 
 # Obtain factomd version from node1

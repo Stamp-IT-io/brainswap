@@ -43,13 +43,32 @@ function show_tests_stats () {
 function run_expect_error ()
 {
         local expected_return_value actual_returned_value
+	if [ "$1" == "--debug" ]; then
+		DEBUG_CMD=1
+		shift
+	else
+		DEBUG_CMD=0
+	fi
         expected_return_value="$1"
         shift
 
         # Using the name of the calling function
         echo -n "Executing test ${FUNCNAME[1]}:${BASH_LINENO[0]}... "
-	("$@") >/dev/null 2>&1 </dev/null
+	if [ "$DEBUG_CMD" == "1" ]; then
+	       	set -x
+		echo "Executing: ---" "$@" "---" >&2
+	else
+		# Discard output to stderr if not in debug mode
+		exec 99>&2
+		exec 2>/dev/null
+	fi
+	("$@") >/dev/null </dev/null
         actual_returned_value="$?"
+	set +x
+	if [ "$DEBUG_CMD" != "1" ]; then 
+		# Restore output to stderr
+		exec 2>&99
+	fi
 
         if [ "$actual_returned_value" -eq "$expected_return_value" ]; then
                 record_test_passed
@@ -80,14 +99,15 @@ function run_expect_output ()
 	if [ "$DEBUG_CMD" == "1" ]; then
 	       	set -x
 	else
+		# Discard output tou stderr if not in debug mode
 		exec 99>&2
 		exec 2>/dev/null
 	fi
 	actual_output=("$("$@")") </dev/null
         actual_returned_value="$?"
-	if [ "$DEBUG_CMD" == "1" ]; then 
-		set +x
-	else
+	set +x
+	if [ "$DEBUG_CMD" != "1" ]; then 
+		# Restore output to stderr
 		exec 2>&99
 	fi
 

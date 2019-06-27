@@ -4,6 +4,10 @@ SELF_DIR="$(dirname "${BASH_SOURCE[0]}")"
 
 CONF_TESTNET_IDS1_DOS=$SELF_DIR/factomd-conf/testnet-id1-dos.conf
 CONF_TESTNET_NOID_DOS=$SELF_DIR/factomd-conf/testnet-noid-dos.conf
+CONF_TESTNET_BADID1=$SELF_DIR/factomd-conf/testnet-badid1.conf
+CONF_TESTNET_BADID2=$SELF_DIR/factomd-conf/testnet-badid2.conf
+CONF_TESTNET_BADPRIV=$SELF_DIR/factomd-conf/testnet-badpriv.conf
+CONF_TESTNET_BADPUB=$SELF_DIR/factomd-conf/testnet-badpub.conf
 
 source $SELF_DIR/../ssh.sh
 source $SELF_DIR/../factomd-conf.sh
@@ -22,6 +26,9 @@ docker run -d --rm --name test3 -p 2223:22 alpine-dropbear
 docker exec test3 mkdir -p "$(dirname "${CONF_PATH}")"
 docker exec -i test3 sh -c "cat >${CONF_PATH}" <$CONF_TESTNET_NOID_DOS
 docker exec -i test3 chmod 600 "${CONF_PATH}"
+
+docker run -d --rm --name test4 -p 2224:22 alpine-dropbear
+docker exec test4 mkdir -p "$(dirname "${CONF_PATH}")"
 
 # Tests
 function no_remote_return_false() {
@@ -84,7 +91,24 @@ function get_factomd_conf_sets_variables_correctly_without_prefix() {
 }
 get_factomd_conf_sets_variables_correctly_without_prefix
 
+function get_factomd_conf_detects_bad_id_and_keys() {
+	docker exec -i test4 sh -c "cat >${CONF_PATH}" <$CONF_TESTNET_BADID1
+        run_expect_error 1 get_factomd_conf root@localhost:2224
+
+	docker exec -i test4 sh -c "cat >${CONF_PATH}" <$CONF_TESTNET_BADID2
+        run_expect_error 1 get_factomd_conf root@localhost:2224
+
+	docker exec -i test4 sh -c "cat >${CONF_PATH}" <$CONF_TESTNET_BADPRIV
+        run_expect_error 1 get_factomd_conf root@localhost:2224
+
+	docker exec -i test4 sh -c "cat >${CONF_PATH}" <$CONF_TESTNET_BADPUB
+        run_expect_error 1 get_factomd_conf root@localhost:2224
+
+}
+get_factomd_conf_detects_bad_id_and_keys
+
 # Tear down after the tests
 docker stop test1 >/dev/null
 docker stop test2 >/dev/null
 docker stop test3 >/dev/null
+docker stop test4 >/dev/null
