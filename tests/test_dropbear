@@ -7,6 +7,13 @@ source $SELF_DIR/../parse.sh
 # Setup for all the tests
 docker run -d --rm --name test1 -p 2222:22 alpine-dropbear
 
+# Tear down after the tests
+function _on_exit() {
+	docker stop test1 >/dev/null
+}
+trap _on_exit EXIT
+
+
 # Tests
 function dropbear_exec_false_return_ok () {
         run_expect_error 0 docker exec -i test1 true
@@ -35,5 +42,3 @@ function dropbear_ssh_input_ok () {
 }
 dropbear_ssh_input_ok
 
-# Tear down after the tests
-docker stop test1 >/dev/null

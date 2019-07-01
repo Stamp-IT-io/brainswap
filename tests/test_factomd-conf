@@ -30,6 +30,15 @@ docker exec -i test3 chmod 600 "${CONF_PATH}"
 docker run -d --rm --name test4 -p 2224:22 alpine-dropbear
 docker exec test4 mkdir -p "$(dirname "${CONF_PATH}")"
 
+# Tear down after the tests
+function _on_exit() {
+	docker stop test1 >/dev/null
+	docker stop test2 >/dev/null
+	docker stop test3 >/dev/null
+	docker stop test4 >/dev/null
+}
+trap _on_exit EXIT
+
 # Tests
 function no_remote_return_false() {
         run_expect_error 1 get_factomd_conf root@localhost:2220
@@ -107,8 +116,3 @@ function get_factomd_conf_detects_bad_id_and_keys() {
 }
 get_factomd_conf_detects_bad_id_and_keys
 
-# Tear down after the tests
-docker stop test1 >/dev/null
-docker stop test2 >/dev/null
-docker stop test3 >/dev/null
-docker stop test4 >/dev/null

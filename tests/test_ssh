@@ -7,6 +7,13 @@ source $SELF_DIR/../ssh.sh
 # Setup for all the tests
 docker run -d --rm --name test1 -p 2222:22 alpine-dropbear
 
+# Tear down after the tests
+function _on_exit() {
+	docker stop test1 >/dev/null
+}
+trap _on_exit EXIT
+
+
 # Tests
 function do_ssh_false_return_ok () {
         run_expect_error 0 do_ssh root@localhost:2222 true
@@ -24,5 +31,3 @@ function do_ssh_input_ok () {
 }
 do_ssh_input_ok
 
-# Tear down after the tests
-docker stop test1 >/dev/null
