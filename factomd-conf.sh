@@ -62,22 +62,28 @@ function get_factomd_conf() {
 	eval ${prefix}'_LSPubK=$(echo $'${prefix}'_LSPubK_line | sed -n $SED_PUB_SCRIPT)'
 	eval ${prefix}'_CAH_line=$(echo "$conf_content" | '"grep -i '^[[:space:]]*ChangeAcksHeight')"
 	eval ${prefix}'_CAH=$(echo $'${prefix}'_CAH_line | sed -n $SED_CAH_SCRIPT)'
-	eval ${prefix}'_CAH=${'${prefix}'_CAH:-0}'
 
 	# Ensure $_IdCId looks like an identity chain Id
 	if ! eval echo '$'${prefix}_IdCId | egrep -q "^$|^[0-9a-fA-F]{64}$"; then
-		print_error_stack_exit "$node1 Id $node1_IdCId does not look like an identity chain Id."
+		eval print_error_stack_exit "\"$remote_node Id \$${prefix}_IdCId does not look like an identity chain Id.\""
 	fi
 
 	# Ensure $_LSPubK looks like a public key
 	if ! eval echo '$'${prefix}_LSPubK | egrep -q "^$|^[0-9a-fA-F]{64}$"; then
-		print_error_stack_exit "$node1 Id $node1_IdCId does not look like a public key."
+		eval print_error_stack_exit "\"$remote_node public key \$${prefix}_LSPubK does not look like a public key.\""
 	fi
 
 	# Ensure $_LSPrivK looks like a private key
 	if ! eval echo '$'${prefix}_LSPrivK | egrep -q "^$|^[0-9a-fA-F]{64}$"; then
-		print_error_stack_exit "$node1 Id $node1_IdCId does not look like a private key."
+		eval print_error_stack_exit "\"$remote_node private key \$${prefix}_LSPrivK does not look like a private key.\""
 	fi
+	
+	# Ensure $_CAH looks like a block number
+	if eval "test \"\$${prefix}_CAH_line\" != '' -a \"\$${prefix}_CAH\" == ''" ; then
+		eval print_error_stack_exit "\"$remote_node \$${prefix}_CAH_line does not look like a block number.\""
+	fi
+
+	eval ${prefix}'_CAH=${'${prefix}'_CAH:-0}'
 	
 	return 0
 }
@@ -101,4 +107,8 @@ function ensure_factomd_conf_writable() {
 	fi
 	
 	return 0
+}
+
+function replace_identity() {
+	true
 }

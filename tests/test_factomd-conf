@@ -3,11 +3,13 @@
 SELF_DIR="$(dirname "${BASH_SOURCE[0]}")"
 
 CONF_TESTNET_IDS1_DOS=$SELF_DIR/factomd-conf/testnet-id1-dos.conf
+CONF_TESTNET_NOCAH=$SELF_DIR/factomd-conf/testnet-id1-nocah.conf
 CONF_TESTNET_NOID_DOS=$SELF_DIR/factomd-conf/testnet-noid-dos.conf
 CONF_TESTNET_BADID1=$SELF_DIR/factomd-conf/testnet-badid1.conf
 CONF_TESTNET_BADID2=$SELF_DIR/factomd-conf/testnet-badid2.conf
 CONF_TESTNET_BADPRIV=$SELF_DIR/factomd-conf/testnet-badpriv.conf
 CONF_TESTNET_BADPUB=$SELF_DIR/factomd-conf/testnet-badpub.conf
+CONF_TESTNET_BADCAH=$SELF_DIR/factomd-conf/testnet-badcah.conf
 
 source $SELF_DIR/../ssh.sh
 source $SELF_DIR/../factomd-conf.sh
@@ -29,6 +31,11 @@ docker exec -i test3 chmod 600 "${CONF_PATH}"
 
 docker run -d --rm --name test4 -p 2224:22 alpine-dropbear
 docker exec test4 mkdir -p "$(dirname "${CONF_PATH}")"
+docker exec -i test4 sh -c "cat >${CONF_PATH}" <$CONF_TESTNET_NOCAH
+docker exec -i test4 chmod 600 "${CONF_PATH}"
+
+docker run -d --rm --name test5 -p 2225:22 alpine-dropbear
+docker exec test5 mkdir -p "$(dirname "${CONF_PATH}")"
 
 # Tear down after the tests
 function _on_exit() {
@@ -36,6 +43,7 @@ function _on_exit() {
 	docker stop test2 >/dev/null
 	docker stop test3 >/dev/null
 	docker stop test4 >/dev/null
+	docker stop test5 >/dev/null
 }
 trap _on_exit EXIT
 
@@ -62,6 +70,7 @@ mod_600_return_true
 function get_factomd_conf_sets_variables_correctly_with_prefix() {
         get_factomd_conf root@localhost:2222 prefixid
         get_factomd_conf root@localhost:2223 prefixnoid
+        get_factomd_conf root@localhost:2224 prefixnocah
 
 	run_expect_output "" [ "$prefixid_IdCId_line" == "$(grep ^IdentityChainID <$CONF_TESTNET_IDS1_DOS)" ]
 	run_expect_output "" [ "$prefixid_IdCId" == "8888881234567890123456789012345678901234567890123456789012345678" ]
@@ -82,6 +91,9 @@ function get_factomd_conf_sets_variables_correctly_with_prefix() {
 	run_expect_output "" [ "$prefixnoid_LSPubK" == "" ]
 	run_expect_output "" [ "$prefixnoid_CAH_line" == "$(grep ^ChangeAcksHeight <$CONF_TESTNET_NOID_DOS)" ]
 	run_expect_output "" [ "$prefixnoid_CAH" == "87432" ]
+
+	run_expect_output "" [ "$prefixnocah_CAH_line" == "" ]
+	run_expect_output "" [ "$prefixnocah_CAH" == "0" ]
 }
 get_factomd_conf_sets_variables_correctly_with_prefix
 
@@ -101,17 +113,20 @@ function get_factomd_conf_sets_variables_correctly_without_prefix() {
 get_factomd_conf_sets_variables_correctly_without_prefix
 
 function get_factomd_conf_detects_bad_id_and_keys() {
-	docker exec -i test4 sh -c "cat >${CONF_PATH}" <$CONF_TESTNET_BADID1
-        run_expect_error 1 get_factomd_conf root@localhost:2224
+	docker exec -i test5 sh -c "cat >${CONF_PATH}" <$CONF_TESTNET_BADID1
+        run_expect_error 1 get_factomd_conf root@localhost:2225
 
-	docker exec -i test4 sh -c "cat >${CONF_PATH}" <$CONF_TESTNET_BADID2
-        run_expect_error 1 get_factomd_conf root@localhost:2224
+	docker exec -i test5 sh -c "cat >${CONF_PATH}" <$CONF_TESTNET_BADID2
+        run_expect_error 1 get_factomd_conf root@localhost:2225
 
-	docker exec -i test4 sh -c "cat >${CONF_PATH}" <$CONF_TESTNET_BADPRIV
-        run_expect_error 1 get_factomd_conf root@localhost:2224
+	docker exec -i test5 sh -c "cat >${CONF_PATH}" <$CONF_TESTNET_BADPRIV
+        run_expect_error 1 get_factomd_conf root@localhost:2225
 
-	docker exec -i test4 sh -c "cat >${CONF_PATH}" <$CONF_TESTNET_BADPUB
-        run_expect_error 1 get_factomd_conf root@localhost:2224
+	docker exec -i test5 sh -c "cat >${CONF_PATH}" <$CONF_TESTNET_BADPUB
+        run_expect_error 1 get_factomd_conf root@localhost:2225
+
+	docker exec -i test5 sh -c "cat >${CONF_PATH}" <$CONF_TESTNET_BADCAH
+        run_expect_error 1 get_factomd_conf root@localhost:2225
 
 }
 get_factomd_conf_detects_bad_id_and_keys

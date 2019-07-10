@@ -134,14 +134,6 @@ SED_DETAILS_SCRIPT='
 WGET_HOME="wget -q -O - \"http://127.0.0.1:8090/\""
 SED_VERSION_SCRIPT='s!^.*<h1[^>]*>.* <small>\([^<]*\)</small>.*$!\1!p'
 
-# sed script to extract IdentityChainID
-SED_ID_SCRIPT='s/^[[:space:]]*IdentityChainID[[:space:]]*=[[:space:]]*\(\([0-9a-z]\)*\)[[:space:]]*$/\1/p'
-
-# sed script to extract ChangeAcksHeight
-SED_CAH_SCRIPT='s/^[[:space:]]*ChangeAcksHeight[[:space:]]*=[[:space:]]*\(\([0-9]\)*\)[[:space:]]*$/\1/p'
-
-
-
 
 echo "This is a pre-alpha version of brainswap. You should not use it except to give feedback." >&2
 exit 1
