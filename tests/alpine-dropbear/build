@@ -1,4 +1,5 @@
 #!/bin/sh
+cp ../ssh-keys/test_brainswap.pub .
 docker build -t alpine-dropbear .
 echo "To run dropbear: docker run -d --rm alpine-dropbear"
 echo "and then connect with: ssh root@localhost -p 2222"

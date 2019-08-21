@@ -1,0 +1,44 @@
+#!/usr/bin/env run_bash_test
+
+SELF_DIR="$(dirname "${BASH_SOURCE[0]}")"
+
+source $SELF_DIR/../parse.sh
+
+# Setup for all the tests
+docker run -d --rm --name test1 -p 3333:22 --mount type=bind,source=$(realpath ${SELF_DIR})/alpine-httpd-test-www,target=/www,readonly alpine-httpd
+
+TEST_CONTENT="$(cat ${SELF_DIR}/alpine-httpd-test-www/test.txt)"
+
+# Tear down after the tests
+function _on_exit() {
+	docker stop test1 >/dev/null
+}
+trap _on_exit EXIT
+
+
+# Tests
+function httpd_www_mounted () {
+        run_expect_error 0 docker exec -i test1 test -f /www/test.txt
+}
+httpd_www_mounted
+
+function httpd_exec_wget_return_ok () {
+        run_expect_error 0 docker exec -i test1 wget -qO- http://localhost:8090/test.txt
+}
+httpd_exec_wget_return_ok
+
+function httpd_exec_wget_output_ok () {
+        run_expect_output "${TEST_CONTENT}" docker exec -i test1 wget -qO- http://localhost:8090/test.txt
+}
+httpd_exec_wget_output_ok
+
+function httpd_ssh_wget_return_ok () {
+        run_expect_error 0 ssh root@localhost -p 3333 wget -qO- http://localhost:8090/test.txt
+}
+httpd_ssh_wget_return_ok
+
+function httpd_ssh_wget_output_ok () {
+        run_expect_output "${TEST_CONTENT}" ssh root@localhost -p 3333 wget -qO- http://localhost:8090/test.txt
+}
+httpd_ssh_wget_output_ok
+
