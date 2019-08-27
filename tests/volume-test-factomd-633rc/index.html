@@ -1,0 +1,343 @@
+
+	
+<!doctype html>
+<html class="no-js" lang="en" dir="ltr">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="x-ua-compatible" content="ie=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link rel="shortcut icon" type="image/x-icon" href="img/icon/favicon.ico">
+        <title>Control Panel - Factom Foundation</title>
+        <link rel="stylesheet" href="css/foundation.min.css">
+        <link rel="stylesheet" href="css/font-awesome.min.css">
+        <link rel="stylesheet" href="css/app.css">
+    </head>
+    <body>
+        
+    <header>
+        <div class="row">
+            <div class="large-3 medium-5 columns logo">
+                <a href="/"><img src="img/factom-foundation_horizontal.svg" alt="Factom Foundation"></a>
+            </div>
+            <div class="large-6 medium-5 columns search factom-search-container">
+                <div class="input-group">
+                    <span class="input-group-label"><i class="fa fa-search" aria-hidden="true"></i></span>
+                    <input type="search" name="q" class="input-group-field" id="factom-search" placeholder="Search a height, address, transaction ID, etc..">
+                    <div class="input-group-button">
+                        <input type="submit" id="factom-search-submit" class="button dark" value="Go">
+                    </div>
+                </div> 
+                <div style="position:absolute;width:inherit">
+                    <div class="factom-search-error callout alert text-center" style="overflow:hidden;display:none;">Sorry, your search didn't return any results.</div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+	<!-- Body -->
+	
+<div class="row" style="margin-bottom: 5px;">
+    <ul class="tabs tabs-control-panel" data-tabs id="example-tabs">
+        <li class="tabs-title is-active" id="indexnav-main"><a aria-selected="true">Main Status Page</a></li>
+        <li class="tabs-title tab-control-panel" id="indexnav-more"><a>More Detailed Node Information</a></li>
+    </ul>
+</div>
+
+	
+        <section id="local">
+            <div class="row">
+                <div class="columns">
+                    <small><span id="server-status"></span></small>
+                    <h1 style="width:100%;">YOUR NODE <small>v6.3.3-rc1</small><small style="float:right;">Git Build: 7fd7716f5af4f8962ef9390adb0f4e4416eb22da</small></h1> 
+                    <!-- <small onclick="nextNode()"><a>Next Node</a></small>, <small>Current:<span id="current-node-number">0</span></small> -->
+                </div>
+            </div>
+            <div class="row">
+                <div class="large-3 medium-4 small-12 columns">
+                    <div class="metric">
+                        <label for="nodeHeight">Your Block Height:</label>
+                        <input type="text" id="nodeHeight" name="nodeHeight" disabled="true" value="-">
+                    </div>
+                    <div class="metric">
+                        <label for="syncFirst">Node Sync Status (1st pass):</label>
+                        <div id="syncFirst" class="progress" role="progressbar" tabindex="0" aria-valuenow="20" aria-valuemin="0" aria-valuetext="100 percent" aria-valuemax="100">
+                            <span class="progress-meter" style="width: 100%">
+                                <p id="testing" class="progress-meter-text">100% Synced (0 of 0)</p>
+                            </span>
+                        </div>
+                    </div>
+                    <div class="metric">
+                        <label for="syncSecond">Node Sync Status (2nd pass):</label>
+                        <div id="syncSecond" class="progress" role="progressbar" tabindex="0" aria-valuenow="20" aria-valuemin="0" aria-valuetext="84 percent" aria-valuemax="100">
+                            <span class="progress-meter" style="width: 84%">
+                                <p class="progress-meter-text">100% Synced (0 of 0)</p>
+                            </span>
+                        </div>
+                    </div>
+                    <div class="metric">
+                        <div class="row">
+                            <div class="small-6 columns">
+                                <label for="serverfedcount">Federated</label>
+                                <input type="text" id="serverfedcount" name="serverfedcount" disabled="true" value="-">
+                            </div>
+                            <div class="small-6 columns">
+                                <label for="serveraudcount">Audit</label>
+                                <input type="text" id="serveraudcount" name="" disabled="true" value="-">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="large-8 medium-7 small-12 columns">
+                    <div class="metric">
+                        <label for="peerList"><span id="totalPeerCount"></span> Connections:</label>
+                        <table id="peerList">
+                            <thead>
+                                <tr>
+                                    <th id="peer-ip">IP <img width="10" class="sorting-img hide" id="peer-ip-sort-img" /></th>
+                                    <th>Status</th>
+                                    <th></th>
+                                    <th id="peer-duration">Duration <img width="10" class="sorting-img hide" id="peer-duration-sort-img" /></th>
+                                    <!--<th>Duration</th>-->
+                                    <th id="peer-sent">Sent <img width="10" class="sorting-img hide" id="peer-sent-sort-img" /></th>
+                                    <th id="peer-received">Received <img width="10" class="sorting-img hide" id="peer-received-sort-img" /></th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <td>MSGS(DATA)</td>
+                                    <td></td>
+                                    <td id="peerquality"></td>
+                                    <td></td>
+                                    <td id="up">0 (0 MB)</td>
+                                    <td id="down">0 (0 MB)</td>
+                                    <td></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+	
+<section id="transactions">
+    <div class="row">
+        <div class="columns">
+            <h1>Transactions &amp; Entries</h1>
+			<ul class="tabs" data-tabs id="example-tabs">
+				<li class="tabs-title is-active"><a href="#panFactoids" aria-selected="true">Factoids<span id="recent-factoid-total">(0)</span></a></li>
+				<li class="tabs-title"><a href="#panEntries">Chain/Entry Commits <span id="recent-entry-total">(0)</span></a></li>
+                <li class="tabs-title"><a href="#panDirectoryBlock">Last Directory Block - <span id="recent-directory-block"></span></a></li>
+			</ul>
+			<div class="tabs-content" data-tabs-content="example-tabs">
+				<div class="tabs-panel is-active" id="panFactoids">
+                <table id="traxList">
+                    <thead>
+                        <tr>
+                            <th>Transaction ID</th>
+                            <th>Total Input</th>
+                            <th># Input Addresses</th>
+                            <th># Output Addresses</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+      
+                    </tbody>
+                </table>
+				</div>
+				<div class="tabs-panel" id="panEntries">
+                <table id="traxList">
+                    <thead>
+                        <tr>
+                            <th>Entry Hash</th>
+                            <th>Chain ID</th>
+                            <th>EC Cost</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+
+                    </tbody>
+                </table>
+				</div>
+                <div class="tabs-panel" id="panDirectoryBlock">
+                <table id="traxList">
+                    <thead>
+                        <tr>
+                            <th colspan="2">Last Directory Block Information</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>KeyMR:</td>
+                            <td id="DBKeyMR"><a id="factom-search-link" type="dblock"></a></td>
+                        </tr>
+                        <tr>
+                            <td>Body KeyMR:</td>
+                            <td id="DBBodyKeyMR"></td>
+                        </tr>
+                        <tr>
+                            <td>Full Hash:</td>
+                            <td id="DBFullHash"></td>
+                        </tr>
+                        <tr>
+                            <td>Timestamp:</td>
+                            <td id="DBBlockTimestamp"></td>
+                        </tr>
+                        <tr>
+                            <td>Block Height:</td>
+                            <td id="DBBlockHeight"></td>
+                        </tr>
+                    </tbody>
+                </table>
+                </div>
+			</div>
+		</div>
+	</div>
+</section>
+
+	
+<section id="dataDump" class="hide">
+    <div class="row">
+	    <div class="columns">
+	        <h1>Terminal data import</h1>
+			<ul class="tabs" data-tabs id="example-tabs">
+				<li class="tabs-title is-active"><a href="#dump1" aria-selected="true">Summary</a></li>
+				<li class="tabs-title"><a href="#dump2">Process List</a></li>
+				<li class="tabs-title"><a href="#dump3">PrintMap</a></li>
+				<li class="tabs-title"><a href="#dump4">Servers</a></li>
+                <li class="tabs-title"><a href="#dump6">Elections</a></li>
+				<li class="tabs-title"><a href="#dump5">Connections</a></li>
+                <li class="tabs-title"><a href="#dump7">Log Settings</a></li>
+			</ul>
+			<div class="tabs-content" data-tabs-content="example-tabs">
+				<div class="tabs-panel is-active" id="dump1">
+					<ul class="tabs dump-tabs" data-tabs id="example-tabs">
+						<!--<li class="dump-tab tabs-title is-active"><a href="#dumpShort" aria-selected="true">Short</a></li>-->
+						<li class="dump-tab tabs-title is-active"><a href="#dumpRaw">Raw</a></li>
+                        <li class="dump-tab tabs-title"><a href="#dumpSyncing" aria-selected="true">Syncing</a></li>
+					</ul>
+					<div id="dump-container">
+						<img id="fullscreen-option" class="absolute-fullscreen-option" src="img/fullscreen.svg"></img>
+		            	<!--<textarea disabled spellcheck="false" class="tabs-panel is-active" id="dumpShort"></textarea>-->
+						<textarea disabled spellcheck="false" class="tabs-panel is-active" id="dumpRaw"></textarea>
+                        <textarea disabled spellcheck="false" class="tabs-panel" id="dumpSyncing"></textarea>
+					</div>
+				</div>
+				<div class="tabs-panel" id="dump2">
+	            	<ul class="tabs dump-tabs" data-tabs id="example-tabs">
+						<li class="dump-tab tabs-title is-active"><a href="#dumpRawProc" aria-selected="true">Current</a></li>
+                        <li class="dump-tab tabs-title"><a href="#dumpPrev" aria-selected="true">Prev</a></li>
+                        <li class="dump-tab tabs-title"><a href="#dumpNext" aria-selected="true">Next</a></li>
+
+
+					</ul>
+					<div id="dump-container">
+						<img id="fullscreen-option" class="absolute-fullscreen-option" src="img/fullscreen.svg"></img>
+						<textarea disabled spellcheck="false" class="tabs-panel is-active" id="dumpRawProc"></textarea>
+                        <textarea disabled spellcheck="false" class="tabs-panel" id="dumpNext"></textarea>
+                        <textarea disabled spellcheck="false" class="tabs-panel" id="dumpPrev"></textarea>
+					</div>
+				</div>
+				<div class="tabs-panel" id="dump3">
+	            	<ul class="tabs dump-tabs" data-tabs id="example-tabs">
+						<li class="dump-tab tabs-title is-active"><a href="#dumpRaw" aria-selected="true">Raw</a></li>
+					</ul>
+					<div id="dump-container">
+						<img id="fullscreen-option" class="absolute-fullscreen-option" src="img/fullscreen.svg"></img>
+						<textarea disabled spellcheck="false" class="tabs-panel is-active" id="dumpRaw"></textarea>
+					</div>
+				</div>
+				<div class="tabs-panel" id="dump4">
+					<ul class="tabs dump-tabs" data-tabs id="example-tabs">
+						<li class="dump-tab tabs-title is-active"><a href="#dumpAuth" aria-selected="true">Authorities</a></li>
+						<li class="dump-tab tabs-title"><a href="#dumpIdent">Identities</a></li>
+						<li class="dump-tab tabs-title"><a href="#dumpMyNode">My Node</a></li>
+					</ul>
+					<div id="dump-container">
+						<img id="fullscreen-option" class="absolute-fullscreen-option" src="img/fullscreen.svg"></img>
+	            		<textarea disabled spellcheck="false" class="tabs-panel is-active" id="dumpAuth"></textarea>
+						<textarea disabled spellcheck="false" class="tabs-panel" id="dumpIdent"></textarea>
+						<textarea disabled spellcheck="false" class="tabs-panel" id="dumpMyNode"></textarea>
+					</div>
+				</div>
+				<div class="tabs-panel" id="dump5">
+					<ul class="tabs dump-tabs" data-tabs id="example-tabs">
+						<li class="dump-tab tabs-title is-active"><a href="#dumpConRaw" aria-selected="true">Raw</a></li>
+						<li class="dump-tab tabs-title"><a href="#dumpSort">Other</a></li>
+					</ul>
+					<div id="dump-container">
+						<img id="fullscreen-option" class="absolute-fullscreen-option" src="img/fullscreen.svg"></img>
+	            		<textarea disabled spellcheck="false" class="tabs-panel is-active" id="dumpConRaw"></textarea>
+						<textarea disabled spellcheck="false" class="tabs-panel" id="dumpSort"></textarea>
+					</div>
+				</div>
+                <div class="tabs-panel" id="dump6">
+                    <ul class="tabs dump-tabs" data-tabs id="example-tabs">
+                        <li class="dump-tab tabs-title is-active"><a href="#dumpElections" aria-selected="true">Election</a></li>
+                        <li class="dump-tab tabs-title"><a href="#dumpSimulatedElections" aria-selected="true">Voting</a></li>
+
+
+                    </ul>
+                    <div id="dump-container">
+                        <img id="fullscreen-option" class="absolute-fullscreen-option" src="img/fullscreen.svg"></img>
+                        <textarea disabled spellcheck="false" class="tabs-panel is-active" id="dumpElections"></textarea>
+                        <textarea disabled spellcheck="false" class="tabs-panel" id="dumpSimulatedElections"></textarea>
+                    </div>
+                </div>
+                <div class="tabs-panel" id="dump7">
+                    <div class="row">
+                        <div class="small-offset-1 small-6 columns">
+							<h3>Change log settings</h3>
+							<div class="input-group" style="margin-left: 5%;">
+								<span class="input-group-label"><i class="fa fa-file-text" aria-hidden="true"></i></span>
+								<input type="search" name="q" class="input-group-field" id="factom-log-set" placeholder="Set the log regex...">
+								<div class="input-group-button">
+									<input type="submit" id="factom-log-submit" class="button dark" value="Go">
+								</div>
+							</div>
+                            <h4>Current Log Setting</h4>
+							<pre style="
+							background-color: #eee;
+                            border: 1px solid #999;
+                            display: block;
+                            padding: 2px;;
+							margin-left: 5%;" id="current-log-value">Placeholder....</pre>
+                            <div class="factom-log-error callout alert text-center" style="overflow:hidden;display:none;">Denied</div>
+                            <div class="factom-log-success callout success text-center" style="overflow:hidden;display:none;">Log settings set</div>
+						</div>
+					</div>
+                </div>
+			</div>
+		</div>
+	</div>
+</section>
+
+<script>
+    var input = document.getElementById("factom-log-set");
+    input.addEventListener("keyup", function(event) {
+        event.preventDefault();
+        if (event.keyCode === 13) {
+            document.getElementById("factom-log-submit").click();
+        }
+    });
+</script>
+
+
+	<!-- End Body -->
+	
+    <script src="js/vendor/jquery.js"></script>
+    <script src="js/vendor/what-input.js"></script>
+    <script src="js/vendor/foundation.min.js"></script>
+    <script src="js/app.js"></script>
+    <script src="js/factomd-ajax.js"></script>
+
+	
+	<script src="js/controlPanel.js"></script>
+
+	
+    </body>
+</html>
+
