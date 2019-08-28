@@ -14,6 +14,7 @@ if ! grep -q '^[[:space:]]*StrictHostKeyChecking no' ~/.ssh/config; then
 fi
 
 # Setup for the following tests
+docker run --rm -d --name "test-mock-badver" -p 2219:22 --mount type=bind,source=$(realpath $SELF_DIR)/volume-test-factomd-badver,target=/www,readonly alpine-httpd
 docker run --rm -d --name "test-mock-notfound" -p 2220:22 --mount type=bind,source=$(realpath $SELF_DIR)/volume-test-factomd-notfound,target=/www,readonly alpine-httpd
 docker run --rm -d --name "test-mock-dummy" -p 2221:22 --mount type=bind,source=$(realpath $SELF_DIR)/volume-test-factomd-dummy,target=/www,readonly alpine-httpd
 docker run --rm -d --name "test-mock-632" -p 2222:22 --mount type=bind,source=$(realpath $SELF_DIR)/volume-test-factomd-632,target=/www,readonly alpine-httpd
@@ -27,6 +28,7 @@ docker run --rm -d --name "test-factomd-633rc" --network=container:test-factomd-
 
 # Tear down after the tests
 function _on_exit() {
+	docker stop test-mock-badver >/dev/null
 	docker stop test-mock-notfound >/dev/null
 	docker stop test-mock-dummy >/dev/null
 	docker stop test-mock-632 >/dev/null
@@ -56,12 +58,14 @@ function get_factomd_version_output_ok() {
 get_factomd_version_output_ok
 
 function get_factomd_info_returns_false() {
+        run_expect_error 1 get_factomd_info root@localhost:2219
         run_expect_error 1 get_factomd_info root@localhost:2220
         run_expect_error 1 get_factomd_info root@localhost:2221
 }
 get_factomd_info_returns_false
 
 function get_factomd_version_returns_false() {
+        run_expect_error 1 get_factomd_version root@localhost:2219
         run_expect_error 1 get_factomd_version root@localhost:2220
         run_expect_error 1 get_factomd_version root@localhost:2221
 }

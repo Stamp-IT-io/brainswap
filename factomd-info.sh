@@ -34,7 +34,12 @@ function get_factomd_info() {
 	if ! echo "$version_build" | grep -q '^[^ ]* [^ ]*$'; then
 		print_error_stack_exit "Cannot parse version string of factomd index from $remote_node."
 	fi
+
 	read ${prefix}_factomd_version ${prefix}_factomd_build <<<"$version_build"
+
+	if ! eval echo "\$${prefix}_factomd_version" | grep -q '^v[0-9]*[.][0-9]*[.][0-9]*'; then
+		eval print_error_stack_exit "\"Version from $remote_node has an unexpected format: \$${prefix}_factomd_version.\""
+	fi
 }
 
 

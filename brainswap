@@ -19,6 +19,7 @@
 source "$(dirname "${BASH_SOURCE[0]}")/error.sh"
 source "$(dirname "${BASH_SOURCE[0]}")/ssh.sh"
 source "$(dirname "${BASH_SOURCE[0]}")/factomd-conf.sh"
+source "$(dirname "${BASH_SOURCE[0]}")/factomd-info.sh"
 
 # Uncomment the following line to turn on debugging
 #set -x
@@ -132,7 +133,6 @@ SED_DETAILS_SCRIPT='
   p'
 
 WGET_HOME="wget -q -O - \"http://127.0.0.1:8090/\""
-SED_VERSION_SCRIPT='s!^.*<h1[^>]*>.* <small>\([^<]*\)</small>.*$!\1!p'
 
 
 echo "This is a pre-alpha version of brainswap. You should not use it except to give feedback." >&2
@@ -171,7 +171,7 @@ fi
 [ "$QUIET" != 1 ] && echo "Getting factomd version from $node1..." >&2
 
 # Obtain factomd version from node1
-VERSION1=$($SSH1 $WGET_HOME | sed -n "$SED_VERSION_SCRIPT")
+VERSION1=$(get_factomd_version $node1)
 
 if ! echo "$VERSION1" | grep -q '^v[0-9]*[.][0-9]*[.][0-9]*'; then
 	print_error_stack_exit "cannot get factomd version from $node1 (is it running?)"
@@ -267,7 +267,7 @@ fi
 [ "$QUIET" != 1 ] && echo "Getting factomd version from $node2..." >&2
 
 # Obtain factomd version from node2
-VERSION2=$($SSH2 $WGET_HOME | sed -n "$SED_VERSION_SCRIPT")
+VERSION2=$(get_factomd_version $node2)
 
 if ! echo "$VERSION2" | grep -q '^v[0-9]*[.][0-9]*[.][0-9]*'; then
 	print_error_stack_exit "$0: Cannot get factomd version from $node2 (is it running?)"
