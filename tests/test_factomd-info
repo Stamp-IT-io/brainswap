@@ -2,15 +2,6 @@
 
 SELF_DIR="$(dirname "${BASH_SOURCE[0]}")"
 
-CONF_TESTNET_IDS1_DOS=$SELF_DIR/factomd-conf/testnet-id1-dos.conf
-CONF_TESTNET_NOCAH=$SELF_DIR/factomd-conf/testnet-id1-nocah.conf
-CONF_TESTNET_NOID_DOS=$SELF_DIR/factomd-conf/testnet-noid-dos.conf
-CONF_TESTNET_BADID1=$SELF_DIR/factomd-conf/testnet-badid1.conf
-CONF_TESTNET_BADID2=$SELF_DIR/factomd-conf/testnet-badid2.conf
-CONF_TESTNET_BADPRIV=$SELF_DIR/factomd-conf/testnet-badpriv.conf
-CONF_TESTNET_BADPUB=$SELF_DIR/factomd-conf/testnet-badpub.conf
-CONF_TESTNET_BADCAH=$SELF_DIR/factomd-conf/testnet-badcah.conf
-
 source $SELF_DIR/../ssh.sh
 source $SELF_DIR/../factomd-info.sh
 
