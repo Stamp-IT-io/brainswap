@@ -173,10 +173,6 @@ fi
 # Obtain factomd version from node1
 VERSION1=$(get_factomd_version $node1)
 
-if ! echo "$VERSION1" | grep -q '^v[0-9]*[.][0-9]*[.][0-9]*'; then
-	print_error_stack_exit "cannot get factomd version from $node1 (is it running?)"
-fi
-
 [ "$QUIET" != 1 ] && echo "Getting factomd details from $node1..." >&2
 
 # Obtain information about factomd from node1
@@ -268,10 +264,6 @@ fi
 
 # Obtain factomd version from node2
 VERSION2=$(get_factomd_version $node2)
-
-if ! echo "$VERSION2" | grep -q '^v[0-9]*[.][0-9]*[.][0-9]*'; then
-	print_error_stack_exit "$0: Cannot get factomd version from $node2 (is it running?)"
-fi
 
 [ "$QUIET" != 1 ] && echo "Getting factomd details from $node2..." >&2
 
