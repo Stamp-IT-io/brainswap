@@ -113,7 +113,7 @@ function run_expect_output ()
 
         if [ "$actual_returned_value" -ne 0 ]; then
                 record_test_failed
-                echo "failed"
+		echo "failed (got return value $actual_returned_value)"
         elif [ "$actual_output" == "$expected_output" ]; then
                 record_test_passed
                 echo "passed"

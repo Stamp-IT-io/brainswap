@@ -19,7 +19,7 @@
 source "$(dirname "${BASH_SOURCE[0]}")/error.sh"
 source "$(dirname "${BASH_SOURCE[0]}")/ssh.sh"
 source "$(dirname "${BASH_SOURCE[0]}")/factomd-conf.sh"
-source "$(dirname "${BASH_SOURCE[0]}")/factomd-info.sh"
+source "$(dirname "${BASH_SOURCE[0]}")/factomd-status.sh"
 
 # Uncomment the following line to turn on debugging
 #set -x
@@ -115,26 +115,6 @@ if [ "$node1" = "$node2" ]; then
 	print_error_stack_exit "$node1 and $node2 are the same nodes, cannot brainswap."
 fi
 
-# Command to get details about locally running factomd
-WGET_DETAILS="wget -q -O - \"http://127.0.0.1:8090/factomd?item=dataDump&value=\""
-
-# sed script to extract useful informations about factomd state
-SED_DETAILS_SCRIPT='
-  s!.*===SummaryStart===......FNode0\[......\] \(....\).\{22,44\} \([0-9]\{5,7\}\)\[[0-9a-f]\{5,7\}\] \([0-9]\{5,7\}\)/\([0-9]\{5,7\}\)/\([0-9]\{5,7\}\) .../.\(.\).*===SummaryEnd===!\1 \2 \3 \4 \5 \6 __NEXT__!;
-  s!__NEXT__.*"NextDump":"===ProcessListStart===[^"]*\(\\u003cnil\\u003e\)[^"]*===ProcessListEnd===!NextNil__RAW__!;
-  s!__NEXT__.*"NextDump":"===ProcessListStart===[^"]*===ProcessListEnd===!OK__RAW__!;
-  s!__NEXT__!NoNextDump__RAW__!;
-  s!__RAW__.*"RawDump":"===ProcessListStart===[^"]*\(\\u003cnil\\u003e\)[^"]*===ProcessListEnd===!RawNil__PREV__!;
-  s!__RAW__.*"RawDump":"===ProcessListStart===[^"]*===ProcessListEnd===!OK__PREV__!;
-  s!__RAW__!NoRawDump__PREV__!;
-  s!__PREV__.*"PrevDump":"===ProcessListStart===[^"]*\(\\u003cnil\\u003e\)[^"]*===ProcessListEnd===.*!PrevNil!;
-  s!__PREV__.*"PrevDump":"===ProcessListStart===[^"]*===ProcessListEnd===.*!OK!;
-  s!__PREV__.*!NoPrevDump!;
-  p'
-
-WGET_HOME="wget -q -O - \"http://127.0.0.1:8090/\""
-
-
 echo "This is a pre-alpha version of brainswap. You should not use it except to give feedback." >&2
 exit 1
 
@@ -168,61 +148,43 @@ if [ -z "$node1_IdCId_line" -o -z "$node1_LSPrivK_line" -o -z "$node1_LSPubK_lin
 	print_error_stack_exit "$node1 has incomplete identity set in factomd.conf."
 fi
 
-[ "$QUIET" != 1 ] && echo "Getting factomd version from $node1..." >&2
-
 # Obtain factomd version from node1
 VERSION1=$(get_factomd_version $node1)
 
-[ "$QUIET" != 1 ] && echo "Getting factomd details from $node1..." >&2
-
 # Obtain information about factomd from node1
-DETAILS=$($SSH1 $WGET_DETAILS | sed -n "$SED_DETAILS_SCRIPT")
-
-if [ "$DETAILS" = "" ]; then
-	print_error_stack_exit "cannot get details about factomd from $node1 (is it running?)"
-fi
-
-if ! echo "$DETAILS" | egrep '^[^ ]{4} [0-9]* [0-9]* [0-9]* [0-9]* [0-9]' >/dev/null; then
-	print_error_stack_exit "cannot parse details about factomd from $node1."
-fi
-
-# Extract information about factomd from node1
-FLAGS=$(echo "$DETAILS" | cut -d\  -f1)
-NEXT_HEIGHT1=$(echo "$DETAILS" | cut -d\  -f5)
-MINUTE1=$(echo "$DETAILS" | cut -d\  -f6)
-PROCESS_LIST=$(echo "$DETAILS" | cut -d\  -f7)
+get_factomd_details $node1 node1
 
 # Ensure node1 is an authority node and operating
-if [ "$FLAGS" != "A___" -a "$FLAGS" != "L___" ]; then
+if [ "$node1_factomd_flags" != "A___" -a "$node1_factomd_flags" != "L___" ]; then
 	# We could do a brainswap, but it is probably not what is intended
-	print_error_stack_exit "$node1 is not an authority node (or in ignore mode) no need for brainswap ($FLAGS)."
+	print_error_stack_exit "$node1 is not an authority node (or in ignore mode) no need for brainswap ($node1_factomd_flags)."
 fi
 
 # Ensure there is no <nil> in the process list of node1
-if [ "$PROCESS_LIST" != "OKOKOK" ]; then
-	print_error_stack_exit "$node1 process list is incomplete, there might be some network instability ($PROCESS_LIST)."
+if [ "$node1_factomd_pl_stats" != "OKOKOK" ]; then
+	print_error_stack_exit "$node1 process list is incomplete, there might be some network instability ($node1_factomd_pl_stats)."
 fi
 
-# Ensure $MINUTE1 is a number between 0 and 9
-if [ 0 -le "$MINUTE1" -a "$MINUTE1" -le "9" ]; then
-	# Here we are sure $MINUTE1 is a number
+# Ensure $node1_factomd_minute is a number between 0 and 9
+if [ 0 -le "$node1_factomd_minute" -a "$node1_factomd_minute" -le "9" ]; then
+	# Here we are sure $node1_factomd_minute is a number
 	true
 else
-	print_error_stack_exit "$node1 minute $MINUTE1, is not a number."
+	print_error_stack_exit "$node1 minute $node1_factomd_minute, is not a number."
 fi
 
-# Ensure $NEXT_HEIGHT1 is a block number
-if ! echo "$NEXT_HEIGHT1" | egrep -q "^[0-9]{5,7}$"; then
-	print_error_stack_exit "$node1 next height $NEXT_HEIGHT1 does not look like a block number."
+# Ensure $node1_factomd_nextheight is a block number
+if ! echo "$node1_factomd_nextheight" | egrep -q "^[0-9]{5,7}$"; then
+	print_error_stack_exit "$node1 next height $node1_factomd_nextheight does not look like a block number."
 fi
 
 # Ensure no brainswap is pending on node1
-if [ "$NEXT_HEIGHT1" -le "$node1_CAH" ]; then
-	print_error_stack_exit "$node1 next height $NEXT_HEIGHT1 is not greater than config ChangeAcksHeight $node1_CAH (pending brainswap?)"
+if [ "$node1_factomd_nextheight" -le "$node1_CAH" ]; then
+	print_error_stack_exit "$node1 next height $node1_factomd_nextheight is not greater than config ChangeAcksHeight $node1_CAH (pending brainswap?)"
 fi
 
 # During minute 0 we cannot tell if the nodes are really following minutes, so we do not initiate a brainswap
-if [ "$MINUTE1" -eq "0" ]; then
+if [ "$node1_factomd_minute" -eq "0" ]; then
 	print_error_stack_exit "$node1 in minute 0, wait for one minute and try again."
 fi
 
@@ -268,60 +230,50 @@ VERSION2=$(get_factomd_version $node2)
 [ "$QUIET" != 1 ] && echo "Getting factomd details from $node2..." >&2
 
 # Obtain information about factomd from node2
-DETAILS=$($SSH2 $WGET_DETAILS | sed -n "$SED_DETAILS_SCRIPT")
-
-if [ "$DETAILS" = "" ]; then
-	print_error_stack_exit "$0: $node2: cannot get details about factomd (is it running?)"
-fi
-
-# Extract information about factomd from node2
-FLAGS=$(echo "$DETAILS" | cut -d\  -f1)
-NEXT_HEIGHT2=$(echo "$DETAILS" | cut -d\  -f5)
-MINUTE2=$(echo "$DETAILS" | cut -d\  -f6)
-PROCESS_LIST=$(echo "$DETAILS" | cut -d\  -f7)
+get_factomd_details $node2 node2
 
 # Ensure node2 is ready for brainswap
-if [ "$FLAGS" != "A___" -a "$FLAGS" != "L___" -a "$FLAGS" != "____" ]; then
-	print_error_stack_exit "$0: $node2 is not ready for brainswap ($FLAGS)."
+if [ "$node2_factomd_flags" != "A___" -a "$node2_factomd_flags" != "L___" -a "$node2_factomd_flags" != "____" ]; then
+	print_error_stack_exit "$0: $node2 is not ready for brainswap ($node2_factomd_flags)."
 fi
 
 # Ensure there is no <nil> in the process list of node2
-if [ "$PROCESS_LIST" != "OKOKOK" ]; then
-	print_error_stack_exit "$0: $node2 process list is incomplete, there might be some network instability ($PROCESS_LIST)."
+if [ "$node2_factomd_pl_stats" != "OKOKOK" ]; then
+	print_error_stack_exit "$0: $node2 process list is incomplete, there might be some network instability ($node2_factomd_pl_stats)."
 fi
 
-# Ensure $MINUTE2 is a number between 0 and 9
-if [ 0 -le "$MINUTE2" -a "$MINUTE2" -le "9" ]; then
-	# Here we are sure $MINUTE2 is a number
+# Ensure $node2_factomd_minute is a number between 0 and 9
+if [ 0 -le "$node2_factomd_minute" -a "$node2_factomd_minute" -le "9" ]; then
+	# Here we are sure $node2_factomd_minute is a number
 	true
 else
-	print_error_stack_exit "$0: $node2 minute $MINUTE2, is not a number."
+	print_error_stack_exit "$0: $node2 minute $node2_factomd_minute, is not a number."
 fi
 
-# Ensure $NEXT_HEIGHT2 is a block number
-if ! echo "$NEXT_HEIGHT2" | egrep -q "^[0-9]{5,7}$"; then
-	print_error_stack_exit "$0: $node2 next height $NEXT_HEIGHT2 does not seem to be a block number."
+# Ensure $node2_factomd_nextheight is a block number
+if ! echo "$node2_factomd_nextheight" | egrep -q "^[0-9]{5,7}$"; then
+	print_error_stack_exit "$0: $node2 next height $node2_factomd_nextheight does not seem to be a block number."
 fi
 
 # Ensure no brainswap is pending on node 2
-if [ "$NEXT_HEIGHT2" -le "$node2_CAH" ]; then
-	print_error_stack_exit "$0: $node2 next height $NEXT_HEIGHT2 not greater than config ChangeAcksHeight $node2_CAH (pending brainswap?)"
+if [ "$node2_factomd_nextheight" -le "$node2_CAH" ]; then
+	print_error_stack_exit "$0: $node2 next height $node2_factomd_nextheight not greater than config ChangeAcksHeight $node2_CAH (pending brainswap?)"
 fi
 
 # Ensure node1 and node2 are on the same block height
-if [ "$NEXT_HEIGHT1" != "$NEXT_HEIGHT2" ]; then
-	print_error_stack_exit "$0: $node1 and $node2 are not on the same block (next: $NEXT_HEIGHT1, $NEXT_HEIGHT2) try again in a few seconds."
+if [ "$node1_factomd_nextheight" != "$node2_factomd_nextheight" ]; then
+	print_error_stack_exit "$0: $node1 and $node2 are not on the same block (next: $node1_factomd_nextheight, $node2_factomd_nextheight) try again in a few seconds."
 fi
 
 # Ensure node1 and node2 are on the same minute
-if [ "$MINUTE1" != "$MINUTE2" ]; then
-	print_error_stack_exit "$0: $node1 and $node2 are not on the same minute ($MINUTE1, $MINUTE2) try again in a few seconds."
+if [ "$node1_factomd_minute" != "$node2_factomd_minute" ]; then
+	print_error_stack_exit "$0: $node1 and $node2 are not on the same minute ($node1_factomd_minute, $node2_factomd_minute) try again in a few seconds."
 fi
 
 # Calculate time before swap and ChangeAcksHeight
-CHANGE_HEIGHT=$NEXT_HEIGHT1
-SWAP_WAIT=$((10 - $MINUTE1))
-if [ "$MINUTE1" -eq 9 ]; then
+CHANGE_HEIGHT=$node1_factomd_nextheight
+SWAP_WAIT=$((10 - $node1_factomd_minute))
+if [ "$node1_factomd_minute" -eq 9 ]; then
 	# If we are on minute 9, we are too close to next block, we wait for one more block
 	SWAP_WAIT=$(($SWAP_WAIT + 10))
 	CHANGE_HEIGHT=$(($CHANGE_HEIGHT + 1))

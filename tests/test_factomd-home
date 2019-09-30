@@ -3,7 +3,7 @@
 SELF_DIR="$(dirname "${BASH_SOURCE[0]}")"
 
 source $SELF_DIR/../ssh.sh
-source $SELF_DIR/../factomd-info.sh
+source $SELF_DIR/../factomd-status.sh
 
 if ! grep -q '^[[:space:]]*StrictHostKeyChecking no' ~/.ssh/config; then
 	echo 'You should consider adding the following section to your ~/.ssh/config to avoid SSH trying to ask to accept new keys during the tests:' >&2
@@ -41,13 +41,13 @@ function _on_exit() {
 trap _on_exit EXIT
 
 # Tests
-function get_factomd_info_returns_true() {
-        run_expect_error 0 get_factomd_info root@localhost:2222
-        run_expect_error 0 get_factomd_info root@localhost:2223
-        run_expect_error 0 get_factomd_info root@localhost:2224
-        run_expect_error 0 get_factomd_info root@localhost:2225
+function get_factomd_home_returns_true() {
+        run_expect_error 0 get_factomd_home root@localhost:2222
+        run_expect_error 0 get_factomd_home root@localhost:2223
+        run_expect_error 0 get_factomd_home root@localhost:2224
+        run_expect_error 0 get_factomd_home root@localhost:2225
 }
-get_factomd_info_returns_true
+get_factomd_home_returns_true
 
 function get_factomd_version_output_ok() {
         run_expect_output "v6.3.2" get_factomd_version root@localhost:2222
@@ -57,12 +57,12 @@ function get_factomd_version_output_ok() {
 }
 get_factomd_version_output_ok
 
-function get_factomd_info_returns_false() {
-        run_expect_error 1 get_factomd_info root@localhost:2219
-        run_expect_error 1 get_factomd_info root@localhost:2220
-        run_expect_error 1 get_factomd_info root@localhost:2221
+function get_factomd_home_returns_false() {
+        run_expect_error 1 get_factomd_home root@localhost:2219
+        run_expect_error 1 get_factomd_home root@localhost:2220
+        run_expect_error 1 get_factomd_home root@localhost:2221
 }
-get_factomd_info_returns_false
+get_factomd_home_returns_false
 
 function get_factomd_version_returns_false() {
         run_expect_error 1 get_factomd_version root@localhost:2219
@@ -71,11 +71,11 @@ function get_factomd_version_returns_false() {
 }
 get_factomd_version_returns_false
 
-function get_factomd_info_sets_variables_correctly_with_prefix() {
-        get_factomd_info root@localhost:2222 prefixm632 </dev/null >/dev/null 2>/dev/null
-        get_factomd_info root@localhost:2223 prefixm633rc </dev/null >/dev/null 2>/dev/null
-        get_factomd_info root@localhost:2224 prefixf632 </dev/null >/dev/null 2>/dev/null
-        get_factomd_info root@localhost:2225 prefixf633rc </dev/null >/dev/null 2>/dev/null
+function get_factomd_home_sets_variables_correctly_with_prefix() {
+        get_factomd_home root@localhost:2222 prefixm632 </dev/null >/dev/null 2>/dev/null
+        get_factomd_home root@localhost:2223 prefixm633rc </dev/null >/dev/null 2>/dev/null
+        get_factomd_home root@localhost:2224 prefixf632 </dev/null >/dev/null 2>/dev/null
+        get_factomd_home root@localhost:2225 prefixf633rc </dev/null >/dev/null 2>/dev/null
 
 	run_expect_output "" [ "$prefixm632_factomd_version" == "v6.3.2" ]
 	run_expect_output "" [ "$prefixm633rc_factomd_version" == "v6.3.3-rc1" ]
@@ -86,13 +86,13 @@ function get_factomd_info_sets_variables_correctly_with_prefix() {
 	run_expect_output "" [ "$prefixf632_factomd_build" == "c429cbf87dd732ffaf95663fa2b5ab900e33e04d" ]
 	run_expect_output "" [ "$prefixf633rc_factomd_build" == "7fd7716f5af4f8962ef9390adb0f4e4416eb22da" ]
 }
-get_factomd_info_sets_variables_correctly_with_prefix
+get_factomd_home_sets_variables_correctly_with_prefix
 
-function get_factomd_info_sets_variables_correctly_without_prefix() {
-        get_factomd_info root@localhost:2222 </dev/null >/dev/null 2>/dev/null
+function get_factomd_home_sets_variables_correctly_without_prefix() {
+        get_factomd_home root@localhost:2222 </dev/null >/dev/null 2>/dev/null
 
 	run_expect_output "" [ "$_factomd_version" == "v6.3.2" ]
 	run_expect_output "" [ "$_factomd_build" == "c429cbf87dd732ffaf95663fa2b5ab900e33e04d" ]
 }
-get_factomd_info_sets_variables_correctly_without_prefix
+get_factomd_home_sets_variables_correctly_without_prefix
 

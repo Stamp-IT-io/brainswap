@@ -1,0 +1,97 @@
+#!/usr/bin/env run_bash_test
+
+SELF_DIR="$(dirname "${BASH_SOURCE[0]}")"
+
+source $SELF_DIR/../ssh.sh
+source $SELF_DIR/../factomd-status.sh
+
+if ! grep -q '^[[:space:]]*StrictHostKeyChecking no' ~/.ssh/config; then
+	echo 'You should consider adding the following section to your ~/.ssh/config to avoid SSH trying to ask to accept new keys during the tests:' >&2
+	echo 'Host localhost' >&2
+	echo '	Hostname localhost' >&2
+	echo '	StrictHostKeyChecking no' >&2
+
+fi
+
+# Setup for the following tests
+docker run --rm -d --name "test-nohttpd" -p 2220:22 alpine-dropbear
+docker run --rm -d --name "test-notfound" -p 2221:22 alpine-httpd
+docker run --rm -d --name "test-mock-nil" -p 2222:22 --mount type=bind,source=$(realpath $SELF_DIR)/volume-test-factomd-details-nil,target=/www,readonly alpine-httpd
+docker run --rm -d --name "test-mock-nil2" -p 2223:22 --mount type=bind,source=$(realpath $SELF_DIR)/volume-test-factomd-details-nil2,target=/www,readonly alpine-httpd
+docker run --rm -d --name "test-mock-audit" -p 2224:22 --mount type=bind,source=$(realpath $SELF_DIR)/volume-test-factomd-details-audit,target=/www,readonly alpine-httpd
+
+# Tear down after the tests
+function _on_exit() {
+	docker stop test-nohttpd >/dev/null
+	docker stop test-notfound >/dev/null
+	docker stop test-mock-nil >/dev/null
+	docker stop test-mock-nil2 >/dev/null
+	docker stop test-mock-audit >/dev/null
+}
+trap _on_exit EXIT
+
+# Tests
+function get_factomd_details_returns_true() {
+        run_expect_error 0 get_factomd_details root@localhost:2222
+        run_expect_error 0 get_factomd_details root@localhost:2223
+        run_expect_error 0 get_factomd_details root@localhost:2224
+}
+get_factomd_details_returns_true
+
+function get_factomd_details_unreachable_returns_false() {
+        run_expect_error 1 get_factomd_details root@localhost:1111
+        run_expect_error 1 get_factomd_details root@localhost:2220
+        run_expect_error 1 get_factomd_details root@localhost:2221
+}
+get_factomd_details_unreachable_returns_false
+
+function get_factomd_details_sets_variables_correctly_with_prefix() {
+        get_factomd_details root@localhost:2222 prefix </dev/null >/dev/null 2>/dev/null
+	run_expect_output "0" echo "$?"	# Check error code
+	run_expect_output "____" echo "$prefix_factomd_flags"
+	run_expect_output "69164" echo "$prefix_factomd_savedheight"
+	run_expect_output "830e86" echo "$prefix_factomd_savedheight_mr"
+	run_expect_output "69164" echo "$prefix_factomd_prevheight"
+	run_expect_output "69165" echo "$prefix_factomd_currheight"
+	run_expect_output "69166" echo "$prefix_factomd_nextheight"
+	run_expect_output "4" echo "$prefix_factomd_minute"
+	run_expect_output "OKRawNilPrevNil" echo "$prefix_factomd_pl_stats"
+
+        get_factomd_details root@localhost:2223 prefix </dev/null >/dev/null 2>/dev/null
+	run_expect_output "0" echo "$?"	# Check error code
+	run_expect_output "____" echo "$prefix_factomd_flags"
+	run_expect_output "160180" echo "$prefix_factomd_savedheight"
+	run_expect_output "ad227a" echo "$prefix_factomd_savedheight_mr"
+	run_expect_output "160178" echo "$prefix_factomd_prevheight"
+	run_expect_output "160182" echo "$prefix_factomd_currheight"
+	run_expect_output "160185" echo "$prefix_factomd_nextheight"
+	run_expect_output "0" echo "$prefix_factomd_minute"
+	run_expect_output "NextNilRawNilOK" echo "$prefix_factomd_pl_stats"
+
+        get_factomd_details root@localhost:2224 prefix </dev/null >/dev/null 2>/dev/null
+	run_expect_output "0" echo "$?"	# Check error code
+	run_expect_output "A___" echo "$prefix_factomd_flags"
+	run_expect_output "64087" echo "$prefix_factomd_savedheight"
+	run_expect_output "5088aa" echo "$prefix_factomd_savedheight_mr"
+	run_expect_output "64085" echo "$prefix_factomd_prevheight"
+	run_expect_output "64088" echo "$prefix_factomd_currheight"
+	run_expect_output "64089" echo "$prefix_factomd_nextheight"
+	run_expect_output "2" echo "$prefix_factomd_minute"
+	run_expect_output "OKOKOK" echo "$prefix_factomd_pl_stats"
+}
+get_factomd_details_sets_variables_correctly_with_prefix
+
+function get_factomd_details_sets_variables_correctly_without_prefix() {
+        get_factomd_details root@localhost:2222 </dev/null >/dev/null 2>/dev/null
+	run_expect_output "0" echo "$?"	# Check error code
+	run_expect_output "____" echo "$_factomd_flags"
+	run_expect_output "69164" echo "$_factomd_savedheight"
+	run_expect_output "830e86" echo "$_factomd_savedheight_mr"
+	run_expect_output "69164" echo "$_factomd_prevheight"
+	run_expect_output "69165" echo "$_factomd_currheight"
+	run_expect_output "69166" echo "$_factomd_nextheight"
+	run_expect_output "4" echo "$_factomd_minute"
+	run_expect_output "OKRawNilPrevNil" echo "$_factomd_pl_stats"
+}
+get_factomd_details_sets_variables_correctly_without_prefix
+
