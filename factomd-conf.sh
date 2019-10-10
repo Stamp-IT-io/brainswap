@@ -6,7 +6,41 @@ source "$(dirname "${BASH_SOURCE[0]}")/ssh.sh"
 
 CONF_PATH="/var/lib/docker/volumes/factom_keys/_data/factomd.conf"
 
+function _must_succeed() {
+	local return_value
+
+	eval $1
+	return_value=$?
+	if [ "$return_value" != "0" ]; then
+		print_error_stack_exit "Command failed: $1 $2 $3 $4 ..." $return_value
+	fi
+}
+
 function get_factomd_conf() {
+	local sudo access_spec remote_node conf_content return_value
+
+	# Also honors QUIET=1 global variable
+	if [ "$1" == "--sudo" ]; then
+		sudo="--sudo"
+		shift
+	fi
+	access_spec=$1 					# e.g. jumpuser@jumphost:jumpport,user@host:port
+
+	remote_node=$(get_remote_spec $access_spec)
+
+	[ "$QUIET" != 1 ] && echo "Getting $CONF_PATH from $remote_node..." >&2
+
+	# Obtain config from remote_node
+	conf_content="$(do_ssh $access_spec $sudo cat $CONF_PATH)"
+
+	if [ "$?" -ne 0 ]; then
+		print_error_stack_exit "cannot connect to $remote_node or factomd.conf not readable. (try --sudo ?)"
+	fi
+
+	echo "$conf_content"
+}
+
+function get_factomd_keys() {
 	local sudo access_spec prefix SED_NET_SCRIPT SED_ID_SCRIPT SED_PRIV_SCRIPT SED_PUB_SCRIPT SED_CAH_SCRIPT remote_node conf_content Net
 
 	# Also honors QUIET=1 global variable
@@ -36,16 +70,8 @@ function get_factomd_conf() {
 		print_error_stack_exit "invalid prefix ($prefix)" >&2
 	fi
 
-	remote_node=$(get_remote_spec $access_spec)
-
-	[ "$QUIET" != 1 ] && echo "Getting $CONF_PATH from $remote_node..." >&2
-
 	# Obtain config from remote_node
-	conf_content="$(do_ssh $access_spec $sudo cat $CONF_PATH)"
-
-	if [ "$?" -ne 0 ]; then
-		print_error_stack_exit "cannot connect to $remote_node or factomd.conf not readable. (try --sudo ?)"
-	fi
+	_must_succeed 'conf_content="$(get_factomd_conf $access_spec)"'
 
 	# Extract Network from remote_node
 	Net="$(echo "$conf_content" | sed -n $SED_NET_SCRIPT)"
@@ -62,6 +88,8 @@ function get_factomd_conf() {
 	eval ${prefix}'_LSPubK=$(echo $'${prefix}'_LSPubK_line | sed -n $SED_PUB_SCRIPT)'
 	eval ${prefix}'_CAH_line=$(echo "$conf_content" | '"grep -i '^[[:space:]]*ChangeAcksHeight')"
 	eval ${prefix}'_CAH=$(echo $'${prefix}'_CAH_line | sed -n $SED_CAH_SCRIPT)'
+
+	remote_node=$(get_remote_spec $access_spec)
 
 	# Ensure $_IdCId looks like an identity chain Id
 	if ! eval echo '$'${prefix}_IdCId | egrep -q "^$|^[0-9a-fA-F]{64}$"; then

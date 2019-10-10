@@ -49,13 +49,13 @@ trap _on_exit EXIT
 
 # Tests
 function no_remote_return_false() {
-        run_expect_error 1 get_factomd_conf root@localhost:2220
+        run_expect_error 1 get_factomd_keys root@localhost:2220
         run_expect_error 1 ensure_factomd_conf_writable root@localhost:2220
 }
 no_remote_return_false
 
 function no_conf_return_false() {
-        run_expect_error 1 get_factomd_conf root@localhost:2221
+        run_expect_error 1 get_factomd_keys root@localhost:2221
         run_expect_error 1 ensure_factomd_conf_writable root@localhost:2221
 }
 no_conf_return_false
@@ -63,14 +63,23 @@ no_conf_return_false
 
 function mod_600_return_true() {
         run_expect_error 0 get_factomd_conf root@localhost:2222
+        run_expect_error 0 get_factomd_keys root@localhost:2222
         run_expect_error 0 ensure_factomd_conf_writable root@localhost:2222
 }
 mod_600_return_true
 
-function get_factomd_conf_sets_variables_correctly_with_prefix() {
-        get_factomd_conf root@localhost:2222 prefixid
-        get_factomd_conf root@localhost:2223 prefixnoid
-        get_factomd_conf root@localhost:2224 prefixnocah
+function get_factomd_conf_output_ok() {
+	local output
+
+	output=$(get_factomd_conf root@localhost:2222)
+	run_expect_error 0 [ "$output" == "$(cat $CONF_TESTNET_IDS1_DOS)" ]
+}
+get_factomd_conf_output_ok
+
+function get_factomd_keys_sets_variables_correctly_with_prefix() {
+        get_factomd_keys root@localhost:2222 prefixid
+        get_factomd_keys root@localhost:2223 prefixnoid
+        get_factomd_keys root@localhost:2224 prefixnocah
 
 	run_expect_output "" [ "$prefixid_IdCId_line" == "$(grep ^IdentityChainID <$CONF_TESTNET_IDS1_DOS)" ]
 	run_expect_output "" [ "$prefixid_IdCId" == "8888881234567890123456789012345678901234567890123456789012345678" ]
@@ -95,10 +104,10 @@ function get_factomd_conf_sets_variables_correctly_with_prefix() {
 	run_expect_output "" [ "$prefixnocah_CAH_line" == "" ]
 	run_expect_output "" [ "$prefixnocah_CAH" == "0" ]
 }
-get_factomd_conf_sets_variables_correctly_with_prefix
+get_factomd_keys_sets_variables_correctly_with_prefix
 
-function get_factomd_conf_sets_variables_correctly_without_prefix() {
-        get_factomd_conf root@localhost:2222
+function get_factomd_keys_sets_variables_correctly_without_prefix() {
+        get_factomd_keys root@localhost:2222
 
 	run_expect_output "" [ "$_IdCId_line" == "$(grep ^IdentityChainID <$CONF_TESTNET_IDS1_DOS)" ]
 	run_expect_output "" [ "$_IdCId" == "8888881234567890123456789012345678901234567890123456789012345678" ]
@@ -110,24 +119,24 @@ function get_factomd_conf_sets_variables_correctly_without_prefix() {
 	run_expect_output "" [ "$_CAH_line" == "$(grep ^ChangeAcksHeight <$CONF_TESTNET_IDS1_DOS)" ]
 	run_expect_output "" [ "$_CAH" == "87432" ]
 }
-get_factomd_conf_sets_variables_correctly_without_prefix
+get_factomd_keys_sets_variables_correctly_without_prefix
 
-function get_factomd_conf_detects_bad_id_and_keys() {
+function get_factomd_keys_detects_bad_id_and_keys() {
 	docker exec -i test5 sh -c "cat >${CONF_PATH}" <$CONF_TESTNET_BADID1
-        run_expect_error 1 get_factomd_conf root@localhost:2225
+        run_expect_error 1 get_factomd_keys root@localhost:2225
 
 	docker exec -i test5 sh -c "cat >${CONF_PATH}" <$CONF_TESTNET_BADID2
-        run_expect_error 1 get_factomd_conf root@localhost:2225
+        run_expect_error 1 get_factomd_keys root@localhost:2225
 
 	docker exec -i test5 sh -c "cat >${CONF_PATH}" <$CONF_TESTNET_BADPRIV
-        run_expect_error 1 get_factomd_conf root@localhost:2225
+        run_expect_error 1 get_factomd_keys root@localhost:2225
 
 	docker exec -i test5 sh -c "cat >${CONF_PATH}" <$CONF_TESTNET_BADPUB
-        run_expect_error 1 get_factomd_conf root@localhost:2225
+        run_expect_error 1 get_factomd_keys root@localhost:2225
 
 	docker exec -i test5 sh -c "cat >${CONF_PATH}" <$CONF_TESTNET_BADCAH
-        run_expect_error 1 get_factomd_conf root@localhost:2225
+        run_expect_error 1 get_factomd_keys root@localhost:2225
 
 }
-get_factomd_conf_detects_bad_id_and_keys
+get_factomd_keys_detects_bad_id_and_keys
 

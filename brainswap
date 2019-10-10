@@ -129,7 +129,7 @@ SSH1="do_ssh $node1"
 ensure_factomd_conf_writable $sudo1 $node1
 
 # Obtain config from node1
-get_factomd_conf $sudo1 $node1 node1
+get_factomd_keys $sudo1 $node1 node1
 
 # Find the place where the new identity will be inserted in config file (CONF1_APPEND is a sed script)
 if echo "$node1_conf" | grep -q -i '^[[:space:]]*;*[[:space:]]*BRAINSWAP_ID_BELOW'; then
@@ -198,7 +198,7 @@ SSH2="do_ssh $node2"
 ensure_factomd_conf_writable $sudo2 $node2
 
 # Obtain config from node2
-get_factomd_conf $sudo2 $node2 node2
+get_factomd_keys $sudo2 $node2 node2
 
 # Ensure node1 and node 2 are on the same network
 if [ "$node1_Net" != "$node2_Net" ]; then

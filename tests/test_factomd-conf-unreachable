@@ -6,7 +6,7 @@ source $SELF_DIR/../factomd-conf.sh
 
 # Tests
 function without_sshd_return_false() {
-        run_expect_error 1 get_factomd_conf root@localhost:9999
+        run_expect_error 1 get_factomd_keys root@localhost:9999
         run_expect_error 1 ensure_factomd_conf_writable root@localhost:9999
 }
 without_sshd_return_false
