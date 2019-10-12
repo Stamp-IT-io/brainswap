@@ -1,5 +1,15 @@
 # Stamp-IT brainswap  Copyright 2018 Stamp-IT Blockchain Solution inc.
 
+function must_succeed() {
+	local return_value
+
+	eval $1
+	return_value=$?
+	if [ "$return_value" != "0" ]; then
+		print_error_stack_exit "Command failed: $1" $return_value
+	fi
+}
+
 function get_stack () {
 	# to avoid noise we start with 1 to skip get_stack caller
 	local i

@@ -36,8 +36,8 @@ function usage() {
 	echo "Usage:"
 	echo "       brainswap [--sudo] [--noswap] [user1@]node1[:port1] [user2@]node2[:port2]"
 	echo
-	echo "node1 must be an authority node"
-	echo "node2 should NOT be an authority node"
+	echo "node1 MUST be an authority node"
+	echo "node2 is usually not be an authority node"
 	echo
 	echo "Tip:"
 	echo "   You can add a line in your factomd.conf to mark the place where the brainswap identity should be inserted."
@@ -129,7 +129,8 @@ SSH1="do_ssh $node1"
 ensure_factomd_conf_writable $sudo1 $node1
 
 # Obtain config from node1
-get_factomd_keys $sudo1 $node1 node1
+must_succeed 'node1_conf="$(get_factomd_conf $sudo1 $access_spec)"'
+must_succeed 'extract_factomd_keys node1 <<<"$node1_conf"'
 
 # Find the place where the new identity will be inserted in config file (CONF1_APPEND is a sed script)
 if echo "$node1_conf" | grep -q -i '^[[:space:]]*;*[[:space:]]*BRAINSWAP_ID_BELOW'; then
@@ -278,7 +279,7 @@ if [ "$node1_factomd_minute" -eq 9 ]; then
 	SWAP_WAIT=$(($SWAP_WAIT + 10))
 	CHANGE_HEIGHT=$(($CHANGE_HEIGHT + 1))
 fi
-# Add a delay of a few few blocks?
+# Add a delay of a few blocks?
 CHANGE_HEIGHT=$(($CHANGE_HEIGHT + $BLOCK_DELAY))
 SWAP_WAIT=$(($SWAP_WAIT + $BLOCK_DELAY * 10))
 

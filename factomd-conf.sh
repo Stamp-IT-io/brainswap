@@ -6,16 +6,6 @@ source "$(dirname "${BASH_SOURCE[0]}")/ssh.sh"
 
 CONF_PATH="/var/lib/docker/volumes/factom_keys/_data/factomd.conf"
 
-function _must_succeed() {
-	local return_value
-
-	eval $1
-	return_value=$?
-	if [ "$return_value" != "0" ]; then
-		print_error_stack_exit "Command failed: $1 $2 $3 $4 ..." $return_value
-	fi
-}
-
 function get_factomd_conf() {
 	local sudo access_spec remote_node conf_content return_value
 
@@ -40,16 +30,12 @@ function get_factomd_conf() {
 	echo "$conf_content"
 }
 
-function get_factomd_keys() {
-	local sudo access_spec prefix SED_NET_SCRIPT SED_ID_SCRIPT SED_PRIV_SCRIPT SED_PUB_SCRIPT SED_CAH_SCRIPT remote_node conf_content Net
+function extract_factomd_keys() {
+	local prefix SED_NET_SCRIPT SED_ID_SCRIPT SED_PRIV_SCRIPT SED_PUB_SCRIPT SED_CAH_SCRIPT remote_node conf_content Net
 
 	# Also honors QUIET=1 global variable
-	if [ "$1" == "--sudo" ]; then
-		sudo="--sudo"
-		shift
-	fi
-	access_spec=$1 					# e.g. jumpuser@jumphost:jumpport,user@host:port
-	prefix=$2
+	prefix=$1
+	conf_content="$(cat)"	# Reads config from stdin
 
 	# sed script to extract Network
 	SED_NET_SCRIPT='s/^[[:space:]]*Network[[:space:]]*=[[:space:]]*\(\([0-9a-zA-Z]\)*\)[^0-9a-zA-Z]*$/\1/pI'
@@ -70,14 +56,11 @@ function get_factomd_keys() {
 		print_error_stack_exit "invalid prefix ($prefix)" >&2
 	fi
 
-	# Obtain config from remote_node
-	_must_succeed 'conf_content="$(get_factomd_conf $access_spec)"'
-
-	# Extract Network from remote_node
+	# Extract Network from config
 	Net="$(echo "$conf_content" | sed -n $SED_NET_SCRIPT)"
 	eval ${prefix}_Net='${Net:-MAIN}'
 
-	# Extract Identity from remote_node
+	# Extract Identity from config
 	eval ${prefix}'_conf="$conf_content"'
 	eval ${prefix}'_IdCId_line=$(echo "$conf_content" | '"grep -i '^[[:space:]]*IdentityChainID')"
 	eval ${prefix}'_IdCId=$(echo $'${prefix}'_IdCId_line | sed -n $SED_ID_SCRIPT)'
@@ -89,30 +72,46 @@ function get_factomd_keys() {
 	eval ${prefix}'_CAH_line=$(echo "$conf_content" | '"grep -i '^[[:space:]]*ChangeAcksHeight')"
 	eval ${prefix}'_CAH=$(echo $'${prefix}'_CAH_line | sed -n $SED_CAH_SCRIPT)'
 
-	remote_node=$(get_remote_spec $access_spec)
-
 	# Ensure $_IdCId looks like an identity chain Id
 	if ! eval echo '$'${prefix}_IdCId | egrep -q "^$|^[0-9a-fA-F]{64}$"; then
-		eval print_error_stack_exit "\"$remote_node Id \$${prefix}_IdCId does not look like an identity chain Id.\""
+		eval print_error_stack_exit "\"Id \$${prefix}_IdCId does not look like an identity chain Id.\""
 	fi
 
 	# Ensure $_LSPubK looks like a public key
 	if ! eval echo '$'${prefix}_LSPubK | egrep -q "^$|^[0-9a-fA-F]{64}$"; then
-		eval print_error_stack_exit "\"$remote_node public key \$${prefix}_LSPubK does not look like a public key.\""
+		eval print_error_stack_exit "\"Public key \$${prefix}_LSPubK does not look like a public key.\""
 	fi
 
 	# Ensure $_LSPrivK looks like a private key
 	if ! eval echo '$'${prefix}_LSPrivK | egrep -q "^$|^[0-9a-fA-F]{64}$"; then
-		eval print_error_stack_exit "\"$remote_node private key \$${prefix}_LSPrivK does not look like a private key.\""
+		eval print_error_stack_exit "\"Private key \$${prefix}_LSPrivK does not look like a private key.\""
 	fi
 	
 	# Ensure $_CAH looks like a block number
 	if eval "test \"\$${prefix}_CAH_line\" != '' -a \"\$${prefix}_CAH\" == ''" ; then
-		eval print_error_stack_exit "\"$remote_node \$${prefix}_CAH_line does not look like a block number.\""
+		eval print_error_stack_exit "\"\$${prefix}_CAH_line does not look like a block number.\""
 	fi
 
 	eval ${prefix}'_CAH=${'${prefix}'_CAH:-0}'
 	
+	return 0
+}
+
+function get_factomd_keys() {
+	local sudo access_spec prefix conf_content
+
+	# Also honors QUIET=1 global variable
+	if [ "$1" == "--sudo" ]; then
+		sudo="--sudo"
+		shift
+	fi
+	access_spec=$1 					# e.g. jumpuser@jumphost:jumpport,user@host:port
+	prefix=$2
+
+	# Obtain config from remote_node
+	must_succeed 'conf_content="$(get_factomd_conf $sudo $access_spec)"'
+	must_succeed 'extract_factomd_keys $prefix <<<"$conf_content"'
+
 	return 0
 }
 

@@ -26,6 +26,8 @@ docker run --rm -d --name "test-factomd-632" --network=container:test-factomd-63
 docker run --rm -d --name "test-factomd-633rc-ssh" -p 2225:22 alpine-dropbear
 docker run --rm -d --name "test-factomd-633rc" --network=container:test-factomd-633rc-ssh factominc/factomd:v6.3.3-rc1-alpine 
 
+sleep 1	# Give a little bit of time for containers to complete their initialization
+
 # Tear down after the tests
 function _on_exit() {
 	docker stop test-mock-badver >/dev/null
