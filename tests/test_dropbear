@@ -38,7 +38,7 @@ function dropbear_ssh_output_ok () {
 dropbear_ssh_output_ok
 
 function dropbear_ssh_input_ok () {
-        echo hello | run_expect_output "hello" ssh root@localhost -p 2222 cat
+        run_expect_output --stdin "hello" ssh root@localhost -p 2222 cat <<<"hello"
 }
 dropbear_ssh_input_ok
 

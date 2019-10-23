@@ -42,13 +42,22 @@ function show_tests_stats () {
 
 function run_expect_error ()
 {
-        local expected_return_value actual_returned_value
-	if [ "$1" == "--debug" ]; then
-		DEBUG_CMD=1
-		shift
-	else
-		DEBUG_CMD=0
-	fi
+        local expected_return_value actual_returned_value DEBUG_CMD STDIN
+
+	DEBUG_CMD=0
+	STDIN='0'
+	while true; do
+		if [ "$1" == "--debug" ]; then
+			DEBUG_CMD=1
+			shift
+		elif [ "$1" == "--stdin" ]; then
+			STDIN='1'
+			shift
+		else
+			break
+		fi
+	done
+
         expected_return_value="$1"
         shift
 
@@ -62,7 +71,11 @@ function run_expect_error ()
 		exec 99>&2
 		exec 2>/dev/null
 	fi
-	("$@") >/dev/null </dev/null
+	if [ "$STDIN" == 0 ]; then
+		("$@") >/dev/null </dev/null
+	else
+		("$@") >/dev/null
+	fi
         actual_returned_value="$?"
 	set +x
 	if [ "$DEBUG_CMD" != "1" ]; then 
@@ -83,14 +96,22 @@ function run_expect_error ()
 
 function run_expect_output ()
 {
-        local expected_output
-        local expected_output actual_output
-	if [ "$1" == "--debug" ]; then
-		DEBUG_CMD=1
-		shift
-	else
-		DEBUG_CMD=0
-	fi
+        local expected_output actual_output DEBUG_CMD STDIN
+
+	DEBUG_CMD=0
+	STDIN='0'
+	while true; do
+		if [ "$1" == "--debug" ]; then
+			DEBUG_CMD=1
+			shift
+		elif [ "$1" == "--stdin" ]; then
+			STDIN='1'
+			shift
+		else
+			break
+		fi
+	done
+
         expected_output="$1"
         shift
 
@@ -103,7 +124,11 @@ function run_expect_output ()
 		exec 99>&2
 		exec 2>/dev/null
 	fi
-	actual_output=("$("$@")") </dev/null
+	if [ "$STDIN" == 0 ]; then
+		actual_output=("$("$@" </dev/null)")
+	else
+		actual_output=("$("$@")")
+	fi
         actual_returned_value="$?"
 	set +x
 	if [ "$DEBUG_CMD" != "1" ]; then 

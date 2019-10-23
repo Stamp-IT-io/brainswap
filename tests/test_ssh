@@ -27,7 +27,7 @@ function do_ssh_output_ok () {
 do_ssh_output_ok
 
 function do_ssh_input_ok () {
-        echo hello | run_expect_output "hello" do_ssh root@localhost:2222 cat
+        run_expect_output --stdin "hello" do_ssh root@localhost:2222 cat <<<"hello"
 }
 do_ssh_input_ok
 
