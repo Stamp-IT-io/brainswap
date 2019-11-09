@@ -27,3 +27,18 @@ function print_error_stack_exit () {
 	exit ${2:-1}	# 1 is the default exit code
 }
 
+function print_error_stack_exit_if_failed() {
+	# Before anything else, we must save the last return value
+	_peseif_last_return_value=$?
+
+	if [ "$_peseif_last_return_value" != "0" ]; then
+		# Cannot declare local before because it would change $?
+		local message return_value
+		message="${1:-"Command failed"}"
+		return_value="${2:-$_peseif_last_return_value}"
+		print_error_stack_exit "$message" $return_value
+	fi
+
+	return 0
+}
+

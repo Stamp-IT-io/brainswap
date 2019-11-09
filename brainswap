@@ -130,18 +130,7 @@ ensure_factomd_conf_writable $sudo1 $node1
 
 # Obtain config from node1
 must_succeed 'node1_conf="$(get_factomd_conf $sudo1 $access_spec)"'
-must_succeed 'extract_factomd_keys node1 <<<"$node1_conf"'
-
-# Find the place where the new identity will be inserted in config file (CONF1_APPEND is a sed script)
-if echo "$node1_conf" | grep -q -i '^[[:space:]]*;*[[:space:]]*BRAINSWAP_ID_BELOW'; then
-	CONF1_APPEND='/^[[:space:]]*;*[[:space:]]*BRAINSWAP_ID_BELOW/a\'
-else
-	if echo "$node1_conf" | grep -q -i '^[[:space:]]*\[app\]'; then
-		CONF1_APPEND='/^[[:space:]]*\[app\]/a\'
-	else
-		print_error_stack_exit "$node1 factomd.conf has neither [app] section nor commented line with BRAINSWAP_ID_BELOW."
-	fi
-fi
+must_succeed 'extract_conf_keys node1 <<<"$node1_conf"'
 
 # Ensure an identiy is in node1 config file
 if [ -z "$node1_IdCId_line" -o -z "$node1_LSPrivK_line" -o -z "$node1_LSPubK_line" ]; then

@@ -1,0 +1,60 @@
+#!/usr/bin/env run_bash_test
+
+SELF_DIR="$(dirname "${BASH_SOURCE[0]}")"
+
+CONF_NOID_APP=$SELF_DIR/files-test-factomd-conf/replace-small-noid-app.conf
+CONF_NOID_CAH_APP=$SELF_DIR/files-test-factomd-conf/replace-small-noid-cah-app.conf
+CONF_NOID_BRAINSWAP=$SELF_DIR/files-test-factomd-conf/replace-small-noid-brainswap-dos.conf
+CONF_WITHID_APP=$SELF_DIR/files-test-factomd-conf/replace-small-withid-app.conf
+CONF_WITHID_BRAINSWAP=$SELF_DIR/files-test-factomd-conf/replace-small-withid-brainswap-dos.conf
+CONF_OTHERID_BRAINSWAP=$SELF_DIR/files-test-factomd-conf/replace-small-otherid-brainswap-dos.conf
+
+IDCHAIN_ID1=8888881234567890123456789012345678901234567890123456789012345678
+LS_PRIVK1=1234567890123456789012345678901234567890123456789012345678901234
+LS_PUBK1=9876543210987654321098765432109876543210987654321098765432109876
+CAH1=87432
+
+source $SELF_DIR/../ssh.sh
+source $SELF_DIR/../factomd-conf.sh
+
+# Tear down after the tests
+function _on_exit() {
+	true
+}
+trap _on_exit EXIT
+
+# Tests
+function bad_param_return_false() {
+	run_expect_error --stdin 1 replace_conf_identity "BadIdChain" "$LS_PRIVK1" "$LS_PUBK1" "$CAH1" <$CONF_NOID_APP
+	run_expect_error --stdin 1 replace_conf_identity "$IDCHAIN_ID1" "987" "$LS_PUBK1" "$CAH1" <$CONF_NOID_APP
+	run_expect_error --stdin 1 replace_conf_identity "$IDCHAIN_ID1" "$LS_PRIVK1" "654" "$CAH1" <$CONF_NOID_APP
+	run_expect_error --stdin 1 replace_conf_identity "$IDCHAIN_ID1" "$LS_PRIVK1" "$LS_PUBK1" "BadCAH" <$CONF_NOID_APP
+}
+bad_param_return_false
+
+function remove_id_app() {
+	run_expect_output --stdin "$(cat $CONF_NOID_CAH_APP)" \
+        	replace_conf_identity <$CONF_WITHID_APP
+}
+remove_id_app
+
+function replace_noid_app() {
+	run_expect_error --stdin 0 \
+		replace_conf_identity "$IDCHAIN_ID1" "$LS_PRIVK1" "$LS_PUBK1" "$CAH1" <$CONF_NOID_APP
+	run_expect_output --stdin "$(cat $CONF_WITHID_APP)" \
+		replace_conf_identity "$IDCHAIN_ID1" "$LS_PRIVK1" "$LS_PUBK1" "$CAH1" <$CONF_NOID_APP
+}
+replace_noid_app
+
+function replace_noid_brainswap() {
+	run_expect_output --stdin "$(cat $CONF_WITHID_BRAINSWAP)" \
+		replace_conf_identity "$IDCHAIN_ID1" "$LS_PRIVK1" "$LS_PUBK1" "$CAH1" <$CONF_NOID_BRAINSWAP
+}
+replace_noid_brainswap
+
+function replace_id_brainswap() {
+	run_expect_output --stdin "$(cat $CONF_WITHID_BRAINSWAP)" \
+		replace_conf_identity "$IDCHAIN_ID1" "$LS_PRIVK1" "$LS_PUBK1" "$CAH1" <$CONF_OTHERID_BRAINSWAP
+}
+replace_id_brainswap
+

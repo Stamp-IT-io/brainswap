@@ -77,9 +77,9 @@ function get_factomd_conf_output_ok() {
 get_factomd_conf_output_ok
 
 function extract_factomd_keys_sets_variables_correctly_with_prefix() {
-        extract_factomd_keys eprefixid <$CONF_TESTNET_IDS1_DOS
-        extract_factomd_keys eprefixnoid <$CONF_TESTNET_NOID_DOS
-        extract_factomd_keys eprefixnocah <$CONF_TESTNET_NOCAH
+        extract_conf_keys eprefixid <$CONF_TESTNET_IDS1_DOS
+        extract_conf_keys eprefixnoid <$CONF_TESTNET_NOID_DOS
+        extract_conf_keys eprefixnocah <$CONF_TESTNET_NOCAH
 
 	run_expect_output "" [ "$eprefixid_IdCId_line" == "$(grep ^IdentityChainID <$CONF_TESTNET_IDS1_DOS)" ]
 	run_expect_output "" [ "$eprefixid_IdCId" == "8888881234567890123456789012345678901234567890123456789012345678" ]
@@ -116,7 +116,7 @@ function extract_factomd_keys_sets_variables_correctly_without_prefix() {
 	_LSPubK=
 	_CAH_line=
 	_CAH=
-        extract_factomd_keys <$CONF_TESTNET_IDS1_DOS
+        extract_conf_keys <$CONF_TESTNET_IDS1_DOS
 
 	run_expect_output "" [ "$_IdCId_line" == "$(grep ^IdentityChainID <$CONF_TESTNET_IDS1_DOS)" ]
 	run_expect_output "" [ "$_IdCId" == "8888881234567890123456789012345678901234567890123456789012345678" ]
