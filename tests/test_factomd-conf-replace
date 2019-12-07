@@ -2,12 +2,13 @@
 
 SELF_DIR="$(dirname "${BASH_SOURCE[0]}")"
 
-CONF_NOID_APP=$SELF_DIR/files-test-factomd-conf/replace-small-noid-app.conf
-CONF_NOID_CAH_APP=$SELF_DIR/files-test-factomd-conf/replace-small-noid-cah-app.conf
-CONF_NOID_BRAINSWAP=$SELF_DIR/files-test-factomd-conf/replace-small-noid-brainswap-dos.conf
-CONF_WITHID_APP=$SELF_DIR/files-test-factomd-conf/replace-small-withid-app.conf
-CONF_WITHID_BRAINSWAP=$SELF_DIR/files-test-factomd-conf/replace-small-withid-brainswap-dos.conf
-CONF_OTHERID_BRAINSWAP=$SELF_DIR/files-test-factomd-conf/replace-small-otherid-brainswap-dos.conf
+CONF_NOID_APP=$SELF_DIR/files-test-factomd-conf/replace-noid-app.conf
+CONF_NOID_CAH_APP=$SELF_DIR/files-test-factomd-conf/replace-noid-cah-app.conf
+CONF_NOID_BRAINSWAP=$SELF_DIR/files-test-factomd-conf/replace-noid-brainswap-dos.conf
+CONF_WITHID_APP=$SELF_DIR/files-test-factomd-conf/replace-withid-app.conf
+CONF_WITHID_APP_SPACES=$SELF_DIR/files-test-factomd-conf/replace-withid-app-spaces.conf
+CONF_WITHID_BRAINSWAP=$SELF_DIR/files-test-factomd-conf/replace-withid-brainswap-dos.conf
+CONF_OTHERID_BRAINSWAP=$SELF_DIR/files-test-factomd-conf/replace-otherid-brainswap-dos.conf
 
 IDCHAIN_ID1=8888881234567890123456789012345678901234567890123456789012345678
 LS_PRIVK1=1234567890123456789012345678901234567890123456789012345678901234
@@ -25,36 +26,40 @@ trap _on_exit EXIT
 
 # Tests
 function bad_param_return_false() {
-	run_expect_error --stdin 1 replace_conf_identity "BadIdChain" "$LS_PRIVK1" "$LS_PUBK1" "$CAH1" <$CONF_NOID_APP
-	run_expect_error --stdin 1 replace_conf_identity "$IDCHAIN_ID1" "987" "$LS_PUBK1" "$CAH1" <$CONF_NOID_APP
-	run_expect_error --stdin 1 replace_conf_identity "$IDCHAIN_ID1" "$LS_PRIVK1" "654" "$CAH1" <$CONF_NOID_APP
-	run_expect_error --stdin 1 replace_conf_identity "$IDCHAIN_ID1" "$LS_PRIVK1" "$LS_PUBK1" "BadCAH" <$CONF_NOID_APP
+	run_expect_error 1 replace_conf_identity "$(cat $CONF_NOID_APP)" "BadIdChain" "$LS_PRIVK1" "$LS_PUBK1" "$CAH1"
+	run_expect_error 1 replace_conf_identity "$(cat $CONF_NOID_APP)" "$IDCHAIN_ID1" "987" "$LS_PUBK1" "$CAH1"
+	run_expect_error 1 replace_conf_identity "$(cat $CONF_NOID_APP)" "$IDCHAIN_ID1" "$LS_PRIVK1" "654" "$CAH1"
+	run_expect_error 1 replace_conf_identity "$(cat $CONF_NOID_APP)" "$IDCHAIN_ID1" "$LS_PRIVK1" "$LS_PUBK1" "BadCAH"
 }
 bad_param_return_false
 
 function remove_id_app() {
-	run_expect_output --stdin "$(cat $CONF_NOID_CAH_APP)" \
-        	replace_conf_identity <$CONF_WITHID_APP
+	run_expect_output "$(cat $CONF_NOID_CAH_APP)" \
+		replace_conf_identity "$(cat $CONF_WITHID_APP)"
 }
 remove_id_app
 
+function remove_id_app_with_spaces() {
+	run_expect_output "$(cat $CONF_NOID_CAH_APP)" \
+		replace_conf_identity "$(cat $CONF_WITHID_APP_SPACES)"
+}
+remove_id_app_with_spaces
+
 function replace_noid_app() {
-	run_expect_error --stdin 0 \
-		replace_conf_identity "$IDCHAIN_ID1" "$LS_PRIVK1" "$LS_PUBK1" "$CAH1" <$CONF_NOID_APP
-	run_expect_output --stdin "$(cat $CONF_WITHID_APP)" \
-		replace_conf_identity "$IDCHAIN_ID1" "$LS_PRIVK1" "$LS_PUBK1" "$CAH1" <$CONF_NOID_APP
+	run_expect_output "$(cat $CONF_WITHID_APP)" \
+		replace_conf_identity "$(cat $CONF_NOID_APP)" "$IDCHAIN_ID1" "$LS_PRIVK1" "$LS_PUBK1" "$CAH1"
 }
 replace_noid_app
 
 function replace_noid_brainswap() {
-	run_expect_output --stdin "$(cat $CONF_WITHID_BRAINSWAP)" \
-		replace_conf_identity "$IDCHAIN_ID1" "$LS_PRIVK1" "$LS_PUBK1" "$CAH1" <$CONF_NOID_BRAINSWAP
+	run_expect_output "$(cat $CONF_WITHID_BRAINSWAP)" \
+		replace_conf_identity "$(cat $CONF_NOID_BRAINSWAP)" "$IDCHAIN_ID1" "$LS_PRIVK1" "$LS_PUBK1" "$CAH1"
 }
 replace_noid_brainswap
 
 function replace_id_brainswap() {
-	run_expect_output --stdin "$(cat $CONF_WITHID_BRAINSWAP)" \
-		replace_conf_identity "$IDCHAIN_ID1" "$LS_PRIVK1" "$LS_PUBK1" "$CAH1" <$CONF_OTHERID_BRAINSWAP
+	run_expect_output "$(cat $CONF_WITHID_BRAINSWAP)" \
+		replace_conf_identity "$(cat $CONF_NOID_BRAINSWAP)" "$IDCHAIN_ID1" "$LS_PRIVK1" "$LS_PUBK1" "$CAH1"
 }
 replace_id_brainswap
 

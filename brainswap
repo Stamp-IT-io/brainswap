@@ -24,10 +24,6 @@ source "$(dirname "${BASH_SOURCE[0]}")/factomd-status.sh"
 # Uncomment the following line to turn on debugging
 #set -x
 
-# User tweakable values
-CONF_PATH="/var/lib/docker/volumes/factom_keys/_data/factomd.conf"
-# End of user tweakable values
-
 function usage() {
 	echo "Stamp-IT brainswap  Copyright 2018 Stamp-IT Blockchain Solution inc."
 	echo
@@ -118,12 +114,6 @@ fi
 echo "This is a pre-alpha version of brainswap. You should not use it except to give feedback." >&2
 exit 1
 
-
-#########
-# Accessing node 1 to obtain some informations...
-
-# Command to login to node1
-SSH1="do_ssh $node1"
 
 # Make sure config is writable before any modification si done
 ensure_factomd_conf_writable $sudo1 $node1
@@ -272,42 +262,11 @@ fi
 CHANGE_HEIGHT=$(($CHANGE_HEIGHT + $BLOCK_DELAY))
 SWAP_WAIT=$(($SWAP_WAIT + $BLOCK_DELAY * 10))
 
-if [ "$VERSION1" = v6.1.1 -o "$VERSION1" = v6.1.1-rc1 -o "$VERSION1" = v6.2.1-rc1 ]; then
-	# Brainswap is not supported on these versions
-	print_error_stack_exit "$0: Brainswap not supported with factomd $VERSION1."
-fi
-CAH1="ChangeAcksHeight = $CHANGE_HEIGHT"
-if [ "$VERSION2" = v6.1.1 -o "$VERSION2" = v6.1.1-rc1 -o "$VERSION2" = v6.2.1-rc1 ]; then
-	# Brainswap is not supported on these versions
-	print_error_stack_exit "$0: Brainswap not supported with factomd $VERSION2."
-fi
-CAH2="ChangeAcksHeight = $CHANGE_HEIGHT"
-
 # Generating new factomd.conf for node1
-NEWCONF1=$(echo "$node1_conf" | grep -i -v '^[[:space:]]*IdentityChainID' | grep -i -v '^[[:space:]]*LocalServerPrivKey' | grep -i -v '^[[:space:]]*LocalServerPublicKey' | grep -i -v '^[[:space:]]*ChangeAcksHeight')
-NEWCONF1=$(echo "$NEWCONF1" | sed "$CONF1_APPEND
-$node2_IdCId_line\\
-$node2_LSPrivK_line\\
-$node_LSPubK_line\\
-$CAH1")
-
-if [ "$?" != 0 ]; then
-	# Maybe due to a bad factomd.conf
-	print_error_stack_exit "$0: Error while generating new factomd.conf for node1, aborting."
-fi
+new_conf1="$(replace_conf_identity "$node1_conf" $node2_IdCId $node2_LSPrivK $node2_LSPubK $CHANGE_HEIGHT)"
 
 # Generating new factomd.conf for node2
-NEWCONF2=$(echo "$node2_conf" | grep -i -v '^[[:space:]]*IdentityChainID' | grep -i -v '^[[:space:]]*LocalServerPrivKey' | grep -i -v '^[[:space:]]*LocalServerPublicKey' | grep -i -v '^[[:space:]]*ChangeAcksHeight')
-NEWCONF2=$(echo "$NEWCONF2" | sed "$CONF2_APPEND
-$node1_IdCId_line\\
-$node1_LSPrivK_line\\
-$node1_LSPubK_line\\
-$CAH2")
-
-if [ "$?" != 0 ]; then
-	# Maybe due to a bad factomd.conf
-	print_error_stack_exit "$0: Error while generating new factomd.conf for node2, aborting."
-fi
+new_conf2=$(replace_conf_identity "$node2_conf" $node1_IdCId $node1_LSPrivK $node1_LSPubK $CHANGE_HEIGHT)"
 
 ####################
 # Ready to initiate brainswap
@@ -315,10 +274,10 @@ if [ "$QUIET" != 1 ]; then
 	echo "Ready to brainswap at block height $CHANGE_HEIGHT, in about $SWAP_WAIT minutes:" >&2
 	echo "--------" >&2
 	echo "Node1: $node1:" >&2
-	echo -e "$node1_IdCId_line\n$node1_LSPrivK_line\n$node1_LSPubK_line" >&2
+	diff -u <(echo "$node1_conf") <(echo "$new_conf1)
 	echo "--------" >&2
 	echo "Node2: $node2:" >&2
-	echo -e "$node2_IdCId_line\n$node2_LSPrivK_line\n$node_LSPubK_line" >&2
+	diff -u <(echo "$node2_conf") <(echo "$new_conf2)
 	echo "--------" >&2
 fi
 
@@ -327,18 +286,13 @@ if [ "$NOSWAP" = "1" ]; then
 	exit 0
 fi
 
-# We change node2 first because it is better to have 2 authority nodes than none (factomd might detect this)
-[ "$QUIET" != 1 ] && echo "Rewriting factomd.conf on $node2..." >&2
-
-if ! echo "$NEWCONF2" | $SSH2 $SUDO2 sh -c '"cat >'"$CONF_PATH"'"'; then
-	print_error_stack_exit "$0: Error overwriting $CONF_PATH on $node2, BRAINSWAP FAILED, you must check that config was not overwritten."
-fi
-
 [ "$QUIET" != 1 ] && echo "Rewriting factomd.conf on $node1..." >&2
+(put_factomd_conf $node1 "$new_conf1" 2>/dev/null)	# We replace the error message, if any (subshell to prevent exit)
+print_error_stack_exit_if_failed "$0: Error overwriting $(get_factomd_conf_path $node1) on $node1, BRAINSWAP FAILED, you must check that config was not overwritten."
 
-if ! echo "$NEWCONF1" | $SSH1 $SUDO1 sh -c '"cat >'"$CONF_PATH"'"'; then
-	print_error_stack_exit "$0: Error overwriting $CONF_PATH on $node1, BRAINSWAP FAILED, you must check that both nodes do not have the same identity."
-fi
+[ "$QUIET" != 1 ] && echo "Rewriting factomd.conf on $node2..." >&2
+(put_factomd_conf $node2 "$new_conf2" 2>/dev/null)	# We replace the error message, if any (subshell to prevent exit)
+print_error_stack_exit_if_failed "$0: Error overwriting $CONF_PATH on $(get_factomd_conf_path $node2), BRAINSWAP FAILED, you must check that both nodes do not have the same identity."
 
 echo "Brainswap initiated successfully for block $CHANGE_HEIGHT, in about $SWAP_WAIT minutes"
 
