@@ -1,5 +1,9 @@
-#!/bin/sh
-cp ../ssh-keys/test_brainswap.pub .
-docker build -t alpine-dropbear .
+#!/bin/bash
+
+SELF_DIR="$(dirname "${BASH_SOURCE[0]}")"
+
+cp "$SELF_DIR/../ssh-keys/test_brainswap.pub" "$SELF_DIR"
+docker build -t alpine-dropbear "$SELF_DIR"
+
 echo "To run dropbear: docker run -d --rm alpine-dropbear"
 echo "and then connect with: ssh root@localhost -p 2222"

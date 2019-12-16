@@ -6,6 +6,16 @@ SELF_DIR="$(dirname "${BASH_SOURCE[0]}")"
 # In our case it's in a sibling directory
 PATH="$PATH:$(realpath "$SELF_DIR/../bash_test")"
 
+function abort() {
+	echo "$1" >&2
+	exit 1
+}
+
+# Ensure dependencies are met
+which docker >/dev/null || abort "Docker executable not found, cannot run tests"
+docker inspect alpine-dropbear >/dev/null 2>&1 || abort "Docker image alpine-dropbear not found, cannot run tests"$'\n'"You can build it with ./alpine-dropbear/build"
+docker inspect alpine-httpd >/dev/null 2>&1 || abort "Docker image alpine-httpd not found, cannot run tests"$'\n'"You can build it with ./alpine-httpd/build"
+
 echo "---------"
 
 for f in $SELF_DIR/test_*; do

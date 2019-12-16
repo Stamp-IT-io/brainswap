@@ -13,6 +13,20 @@ if ! grep -q '^[[:space:]]*StrictHostKeyChecking no' ~/.ssh/config; then
 
 fi
 
+# Tear down after the tests
+function _on_exit() {
+	docker stop test-mock-badver >/dev/null
+	docker stop test-mock-notfound >/dev/null
+	docker stop test-mock-dummy >/dev/null
+	docker stop test-mock-632 >/dev/null
+	docker stop test-mock-633rc >/dev/null
+	docker stop test-factomd-632 >/dev/null
+	docker stop test-factomd-632-ssh >/dev/null
+	docker stop test-factomd-633rc >/dev/null
+	docker stop test-factomd-633rc-ssh >/dev/null
+}
+trap _on_exit EXIT
+
 # Setup for the following tests
 docker run --rm -d --name "test-mock-badver" -p 2219:22 --mount type=bind,source=$(realpath $SELF_DIR)/volume-test-factomd-badver,target=/www,readonly alpine-httpd
 docker run --rm -d --name "test-mock-notfound" -p 2220:22 --mount type=bind,source=$(realpath $SELF_DIR)/volume-test-factomd-notfound,target=/www,readonly alpine-httpd
@@ -27,20 +41,6 @@ docker run --rm -d --name "test-factomd-633rc-ssh" -p 2225:22 alpine-dropbear
 docker run --rm -d --name "test-factomd-633rc" --network=container:test-factomd-633rc-ssh factominc/factomd:v6.3.3-rc1-alpine 
 
 sleep 1	# Give a little bit of time for containers to complete their initialization
-
-# Tear down after the tests
-function _on_exit() {
-	docker stop test-mock-badver >/dev/null
-	docker stop test-mock-notfound >/dev/null
-	docker stop test-mock-dummy >/dev/null
-	docker stop test-mock-632 >/dev/null
-	docker stop test-mock-633rc >/dev/null
-	docker stop test-factomd-632 >/dev/null
-	docker stop test-factomd-632-ssh >/dev/null
-	docker stop test-factomd-633rc >/dev/null
-	docker stop test-factomd-633rc-ssh >/dev/null
-}
-trap _on_exit EXIT
 
 # Tests
 function get_factomd_home_returns_true() {
@@ -75,26 +75,34 @@ get_factomd_version_returns_false
 
 function get_factomd_home_sets_variables_correctly_with_prefix() {
         get_factomd_home root@localhost:2222 prefixm632 </dev/null >/dev/null 2>/dev/null
-        get_factomd_home root@localhost:2223 prefixm633rc </dev/null >/dev/null 2>/dev/null
-        get_factomd_home root@localhost:2224 prefixf632 </dev/null >/dev/null 2>/dev/null
-        get_factomd_home root@localhost:2225 prefixf633rc </dev/null >/dev/null 2>/dev/null
+	expect_error 0	# Cannot use run_expect_error because variables would not be set here (outside of subshell)
 
-	run_expect_output "" [ "$prefixm632_factomd_version" == "v6.3.2" ]
-	run_expect_output "" [ "$prefixm633rc_factomd_version" == "v6.3.3-rc1" ]
-	run_expect_output "" [ "$prefixf632_factomd_version" == "v6.3.2" ]
-	run_expect_output "" [ "$prefixf633rc_factomd_version" == "v6.3.3-rc1" ]
-	run_expect_output "" [ "$prefixm632_factomd_build" == "c429cbf87dd732ffaf95663fa2b5ab900e33e04d" ]
-	run_expect_output "" [ "$prefixm633rc_factomd_build" == "7fd7716f5af4f8962ef9390adb0f4e4416eb22da" ]
-	run_expect_output "" [ "$prefixf632_factomd_build" == "c429cbf87dd732ffaf95663fa2b5ab900e33e04d" ]
-	run_expect_output "" [ "$prefixf633rc_factomd_build" == "7fd7716f5af4f8962ef9390adb0f4e4416eb22da" ]
+        get_factomd_home root@localhost:2223 prefixm633rc </dev/null >/dev/null 2>/dev/null
+	expect_error 0	# Cannot use run_expect_error because variables would not be set here (outside of subshell)
+
+        get_factomd_home root@localhost:2224 prefixf632 </dev/null >/dev/null 2>/dev/null
+	expect_error 0	# Cannot use run_expect_error because variables would not be set here (outside of subshell)
+
+        get_factomd_home root@localhost:2225 prefixf633rc </dev/null >/dev/null 2>/dev/null
+	expect_error 0	# Cannot use run_expect_error because variables would not be set here (outside of subshell)
+
+	run_expect_error 0 [ "$prefixm632_factomd_version" == "v6.3.2" ]
+	run_expect_error 0 [ "$prefixm633rc_factomd_version" == "v6.3.3-rc1" ]
+	run_expect_error 0 [ "$prefixf632_factomd_version" == "v6.3.2" ]
+	run_expect_error 0 [ "$prefixf633rc_factomd_version" == "v6.3.3-rc1" ]
+	run_expect_error 0 [ "$prefixm632_factomd_build" == "c429cbf87dd732ffaf95663fa2b5ab900e33e04d" ]
+	run_expect_error 0 [ "$prefixm633rc_factomd_build" == "7fd7716f5af4f8962ef9390adb0f4e4416eb22da" ]
+	run_expect_error 0 [ "$prefixf632_factomd_build" == "c429cbf87dd732ffaf95663fa2b5ab900e33e04d" ]
+	run_expect_error 0 [ "$prefixf633rc_factomd_build" == "7fd7716f5af4f8962ef9390adb0f4e4416eb22da" ]
 }
 get_factomd_home_sets_variables_correctly_with_prefix
 
 function get_factomd_home_sets_variables_correctly_without_prefix() {
         get_factomd_home root@localhost:2222 </dev/null >/dev/null 2>/dev/null
+	expect_error 0	# Cannot use run_expect_error because variables would not be set here (outside of subshell)
 
-	run_expect_output "" [ "$_factomd_version" == "v6.3.2" ]
-	run_expect_output "" [ "$_factomd_build" == "c429cbf87dd732ffaf95663fa2b5ab900e33e04d" ]
+	run_expect_error 0 [ "$_factomd_version" == "v6.3.2" ]
+	run_expect_error 0 [ "$_factomd_build" == "c429cbf87dd732ffaf95663fa2b5ab900e33e04d" ]
 }
 get_factomd_home_sets_variables_correctly_without_prefix
 

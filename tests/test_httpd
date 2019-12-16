@@ -4,16 +4,16 @@ SELF_DIR="$(dirname "${BASH_SOURCE[0]}")"
 
 source $SELF_DIR/../parse.sh
 
-# Setup for all the tests
-docker run -d --rm --name test1 -p 3333:22 --mount type=bind,source=$(realpath ${SELF_DIR})/volume-test-httpd-www,target=/www,readonly alpine-httpd
-
-TEST_CONTENT="$(cat ${SELF_DIR}/volume-test-httpd-www/test.txt)"
-
 # Tear down after the tests
 function _on_exit() {
 	docker stop test1 >/dev/null
 }
 trap _on_exit EXIT
+
+# Setup for all the tests
+docker run -d --rm --name test1 -p 3333:22 --mount type=bind,source=$(realpath ${SELF_DIR})/volume-test-httpd-www,target=/www,readonly alpine-httpd
+
+TEST_CONTENT="$(cat ${SELF_DIR}/volume-test-httpd-www/test.txt)"
 
 
 # Tests

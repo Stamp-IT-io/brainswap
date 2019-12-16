@@ -4,14 +4,14 @@ SELF_DIR="$(dirname "${BASH_SOURCE[0]}")"
 
 source $SELF_DIR/../parse.sh
 
-# Setup for all the tests
-docker run -d --rm --name test1 -p 2222:22 alpine-dropbear
-
 # Tear down after the tests
 function _on_exit() {
 	docker stop test1 >/dev/null
 }
 trap _on_exit EXIT
+
+# Setup for all the tests
+docker run -d --rm --name test1 -p 2222:22 alpine-dropbear
 
 
 # Tests

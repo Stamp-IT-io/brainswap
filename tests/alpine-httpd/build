@@ -1,6 +1,10 @@
-#!/bin/sh
-cp ../ssh-keys/test_brainswap.pub .
-docker build -t alpine-httpd .
+#!/bin/bash
+
+SELF_DIR="$(dirname "${BASH_SOURCE[0]}")"
+
+cp "$SELF_DIR/../ssh-keys/test_brainswap.pub" "$SELF_DIR"
+docker build -t alpine-httpd "$SELF_DIR"
+
 echo "To run dropbear: docker run -d --rm -p 3333:22 --mount type=bind,source=$(pwd),target=/www,readonly --cap-add SYS_PTRACE alpine-httpd"
 echo "and then connect with: ssh root@localhost -p 3333"
 echo "A Web server will run on port 8090 with content from /www"

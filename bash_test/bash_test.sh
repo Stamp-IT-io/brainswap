@@ -40,6 +40,26 @@ function show_tests_stats () {
 	echo "$BASH_TEST_FAILED tests failed, $BASH_TEST_PASSED passed out of $(($BASH_TEST_PASSED + $BASH_TEST_FAILED))"
 }
 
+function expect_error ()
+{
+	# Cannot declare a local before saving last result
+	_expect_error_actual_returned_value="$?"
+        local expected_return_value
+        expected_return_value="$1"
+
+        echo -n "Executing test ${FUNCNAME[1]}:${BASH_LINENO[0]}... "
+
+        if [ "$_expect_error_actual_returned_value" -eq "$expected_return_value" ]; then
+                record_test_passed
+                echo "passed"
+        else
+                record_test_failed
+                echo "failed"
+                echo -ne "\tAssertion failed at ${BASH_SOURCE[1]}:${BASH_LINENO[0]}: "
+                echo -e "Expected return value $expected_return_value, got $_expect_error_actual_returned_value"
+        fi
+}
+
 function run_expect_error ()
 {
         local expected_return_value actual_returned_value DEBUG_CMD STDIN

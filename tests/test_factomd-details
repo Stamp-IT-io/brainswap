@@ -13,13 +13,6 @@ if ! grep -q '^[[:space:]]*StrictHostKeyChecking no' ~/.ssh/config; then
 
 fi
 
-# Setup for the following tests
-docker run --rm -d --name "test-nohttpd" -p 2220:22 alpine-dropbear
-docker run --rm -d --name "test-notfound" -p 2221:22 alpine-httpd
-docker run --rm -d --name "test-mock-nil" -p 2222:22 --mount type=bind,source=$(realpath $SELF_DIR)/volume-test-factomd-details-nil,target=/www,readonly alpine-httpd
-docker run --rm -d --name "test-mock-nil2" -p 2223:22 --mount type=bind,source=$(realpath $SELF_DIR)/volume-test-factomd-details-nil2,target=/www,readonly alpine-httpd
-docker run --rm -d --name "test-mock-audit" -p 2224:22 --mount type=bind,source=$(realpath $SELF_DIR)/volume-test-factomd-details-audit,target=/www,readonly alpine-httpd
-
 # Tear down after the tests
 function _on_exit() {
 	docker stop test-nohttpd >/dev/null
@@ -29,6 +22,13 @@ function _on_exit() {
 	docker stop test-mock-audit >/dev/null
 }
 trap _on_exit EXIT
+
+# Setup for the following tests
+docker run --rm -d --name "test-nohttpd" -p 2220:22 alpine-dropbear
+docker run --rm -d --name "test-notfound" -p 2221:22 alpine-httpd
+docker run --rm -d --name "test-mock-nil" -p 2222:22 --mount type=bind,source=$(realpath $SELF_DIR)/volume-test-factomd-details-nil,target=/www,readonly alpine-httpd
+docker run --rm -d --name "test-mock-nil2" -p 2223:22 --mount type=bind,source=$(realpath $SELF_DIR)/volume-test-factomd-details-nil2,target=/www,readonly alpine-httpd
+docker run --rm -d --name "test-mock-audit" -p 2224:22 --mount type=bind,source=$(realpath $SELF_DIR)/volume-test-factomd-details-audit,target=/www,readonly alpine-httpd
 
 # Tests
 function get_factomd_details_returns_true() {
@@ -47,6 +47,7 @@ get_factomd_details_unreachable_returns_false
 
 function get_factomd_details_sets_variables_correctly_with_prefix() {
         get_factomd_details root@localhost:2222 prefix </dev/null >/dev/null 2>/dev/null
+	expect_error 0	# Cannot use run_expect_error because variables would not be set here (outside of subshell)
 	run_expect_output "0" echo "$?"	# Check error code
 	run_expect_output "____" echo "$prefix_factomd_flags"
 	run_expect_output "69164" echo "$prefix_factomd_savedheight"
@@ -58,6 +59,7 @@ function get_factomd_details_sets_variables_correctly_with_prefix() {
 	run_expect_output "OKRawNilPrevNil" echo "$prefix_factomd_pl_stats"
 
         get_factomd_details root@localhost:2223 prefix </dev/null >/dev/null 2>/dev/null
+	expect_error 0	# Cannot use run_expect_error because variables would not be set here (outside of subshell)
 	run_expect_output "0" echo "$?"	# Check error code
 	run_expect_output "____" echo "$prefix_factomd_flags"
 	run_expect_output "160180" echo "$prefix_factomd_savedheight"
@@ -69,6 +71,7 @@ function get_factomd_details_sets_variables_correctly_with_prefix() {
 	run_expect_output "NextNilRawNilOK" echo "$prefix_factomd_pl_stats"
 
         get_factomd_details root@localhost:2224 prefix </dev/null >/dev/null 2>/dev/null
+	expect_error 0	# Cannot use run_expect_error because variables would not be set here (outside of subshell)
 	run_expect_output "0" echo "$?"	# Check error code
 	run_expect_output "A___" echo "$prefix_factomd_flags"
 	run_expect_output "64087" echo "$prefix_factomd_savedheight"
@@ -83,6 +86,7 @@ get_factomd_details_sets_variables_correctly_with_prefix
 
 function get_factomd_details_sets_variables_correctly_without_prefix() {
         get_factomd_details root@localhost:2222 </dev/null >/dev/null 2>/dev/null
+	expect_error 0	# Cannot use run_expect_error because variables would not be set here (outside of subshell)
 	run_expect_output "0" echo "$?"	# Check error code
 	run_expect_output "____" echo "$_factomd_flags"
 	run_expect_output "69164" echo "$_factomd_savedheight"

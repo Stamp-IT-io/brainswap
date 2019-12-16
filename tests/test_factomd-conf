@@ -11,10 +11,21 @@ CONF_TESTNET_BADPRIV=$SELF_DIR/files-test-factomd-conf/testnet-badpriv.conf
 CONF_TESTNET_BADPUB=$SELF_DIR/files-test-factomd-conf/testnet-badpub.conf
 CONF_TESTNET_BADCAH=$SELF_DIR/files-test-factomd-conf/testnet-badcah.conf
 
+# Most tests won't work if this path changes
 EXPECTED_CONF_PATH="/var/lib/docker/volumes/factom_keys/_data/factomd.conf"
 
 source $SELF_DIR/../ssh.sh
 source $SELF_DIR/../factomd-conf.sh
+
+# Tear down after the tests
+function _on_exit() {
+	docker stop test1 >/dev/null
+	docker stop test2 >/dev/null
+	docker stop test3 >/dev/null
+	docker stop test4 >/dev/null
+	docker stop test5 >/dev/null
+}
+trap _on_exit EXIT
 
 # Setup for the following tests
 docker run -d --rm --name test1 -p 2221:22 alpine-dropbear
@@ -38,16 +49,7 @@ docker exec -i test4 chmod 600 "${EXPECTED_CONF_PATH}"
 docker run -d --rm --name test5 -p 2225:22 alpine-dropbear
 docker exec test5 mkdir -p "$(dirname "${EXPECTED_CONF_PATH}")"
 
-# Tear down after the tests
-function _on_exit() {
-	docker stop test1 >/dev/null
-	docker stop test2 >/dev/null
-	docker stop test3 >/dev/null
-	docker stop test4 >/dev/null
-	docker stop test5 >/dev/null
-}
-trap _on_exit EXIT
-
+# Tests
 function get_path_output_ok() {
 	# Most tests won't work if this path changes
         run_expect_output $EXPECTED_CONF_PATH get_factomd_conf_path root@localhost:2220
@@ -61,7 +63,6 @@ function get_path_return_false() {
 }
 get_path_return_false
 
-# Tests
 function no_remote_return_false() {
         run_expect_error 1 get_factomd_keys root@localhost:2220
         run_expect_error 1 ensure_factomd_conf_writable root@localhost:2220
@@ -85,8 +86,7 @@ mod_600_return_true
 function get_factomd_conf_output_ok() {
 	local output
 
-	output=$(get_factomd_conf root@localhost:2222)
-	run_expect_error 0 [ "$output" == "$(cat $CONF_TESTNET_IDS1_DOS)" ]
+	run_expect_output "$(cat $CONF_TESTNET_IDS1_DOS)" get_factomd_conf root@localhost:2222
 }
 get_factomd_conf_output_ok
 
@@ -95,28 +95,28 @@ function extract_factomd_keys_sets_variables_correctly_with_prefix() {
         extract_conf_keys eprefixnoid <$CONF_TESTNET_NOID_DOS
         extract_conf_keys eprefixnocah <$CONF_TESTNET_NOCAH
 
-	run_expect_output "" [ "$eprefixid_IdCId_line" == "$(grep ^IdentityChainID <$CONF_TESTNET_IDS1_DOS)" ]
-	run_expect_output "" [ "$eprefixid_IdCId" == "8888881234567890123456789012345678901234567890123456789012345678" ]
-	run_expect_output "" [ "$eprefixid_IdCId_short" == "123456" ]
-	run_expect_output "" [ "$eprefixid_LSPrivK_line" == "$(grep ^LocalServerPrivKey <$CONF_TESTNET_IDS1_DOS)" ]
-	run_expect_output "" [ "$eprefixid_LSPrivK" == "1234567890123456789012345678901234567890123456789012345678901234" ]
-	run_expect_output "" [ "$eprefixid_LSPubK_line" == "$(grep ^LocalServerPublicKey <$CONF_TESTNET_IDS1_DOS)" ]
-	run_expect_output "" [ "$eprefixid_LSPubK" == "9876543210987654321098765432109876543210987654321098765432109876" ]
-	run_expect_output "" [ "$eprefixid_CAH_line" == "$(grep ^ChangeAcksHeight <$CONF_TESTNET_IDS1_DOS)" ]
-	run_expect_output "" [ "$eprefixid_CAH" == "87432" ]
+	run_expect_error 0 [ "$eprefixid_IdCId_line" == "$(grep ^IdentityChainID <$CONF_TESTNET_IDS1_DOS)" ]
+	run_expect_error 0 [ "$eprefixid_IdCId" == "8888881234567890123456789012345678901234567890123456789012345678" ]
+	run_expect_error 0 [ "$eprefixid_IdCId_short" == "123456" ]
+	run_expect_error 0 [ "$eprefixid_LSPrivK_line" == "$(grep ^LocalServerPrivKey <$CONF_TESTNET_IDS1_DOS)" ]
+	run_expect_error 0 [ "$eprefixid_LSPrivK" == "1234567890123456789012345678901234567890123456789012345678901234" ]
+	run_expect_error 0 [ "$eprefixid_LSPubK_line" == "$(grep ^LocalServerPublicKey <$CONF_TESTNET_IDS1_DOS)" ]
+	run_expect_error 0 [ "$eprefixid_LSPubK" == "9876543210987654321098765432109876543210987654321098765432109876" ]
+	run_expect_error 0 [ "$eprefixid_CAH_line" == "$(grep ^ChangeAcksHeight <$CONF_TESTNET_IDS1_DOS)" ]
+	run_expect_error 0 [ "$eprefixid_CAH" == "87432" ]
 
-	run_expect_output "" [ "$eprefixnoid_IdCId_line" == "" ]
-	run_expect_output "" [ "$eprefixnoid_IdCId" == "" ]
-	run_expect_output "" [ "$eprefixnoid_IdCId_short" == "" ]
-	run_expect_output "" [ "$eprefixnoid_LSPrivK_line" == "" ]
-	run_expect_output "" [ "$eprefixnoid_LSPrivK" == "" ]
-	run_expect_output "" [ "$eprefixnoid_LSPubK_line" == "" ]
-	run_expect_output "" [ "$eprefixnoid_LSPubK" == "" ]
-	run_expect_output "" [ "$eprefixnoid_CAH_line" == "$(grep ^ChangeAcksHeight <$CONF_TESTNET_NOID_DOS)" ]
-	run_expect_output "" [ "$eprefixnoid_CAH" == "87432" ]
+	run_expect_error 0 [ "$eprefixnoid_IdCId_line" == "" ]
+	run_expect_error 0 [ "$eprefixnoid_IdCId" == "" ]
+	run_expect_error 0 [ "$eprefixnoid_IdCId_short" == "" ]
+	run_expect_error 0 [ "$eprefixnoid_LSPrivK_line" == "" ]
+	run_expect_error 0 [ "$eprefixnoid_LSPrivK" == "" ]
+	run_expect_error 0 [ "$eprefixnoid_LSPubK_line" == "" ]
+	run_expect_error 0 [ "$eprefixnoid_LSPubK" == "" ]
+	run_expect_error 0 [ "$eprefixnoid_CAH_line" == "$(grep ^ChangeAcksHeight <$CONF_TESTNET_NOID_DOS)" ]
+	run_expect_error 0 [ "$eprefixnoid_CAH" == "87432" ]
 
-	run_expect_output "" [ "$eprefixnocah_CAH_line" == "" ]
-	run_expect_output "" [ "$eprefixnocah_CAH" == "0" ]
+	run_expect_error 0 [ "$eprefixnocah_CAH_line" == "" ]
+	run_expect_error 0 [ "$eprefixnocah_CAH" == "0" ]
 }
 extract_factomd_keys_sets_variables_correctly_with_prefix
 
@@ -132,15 +132,15 @@ function extract_factomd_keys_sets_variables_correctly_without_prefix() {
 	_CAH=
         extract_conf_keys <$CONF_TESTNET_IDS1_DOS
 
-	run_expect_output "" [ "$_IdCId_line" == "$(grep ^IdentityChainID <$CONF_TESTNET_IDS1_DOS)" ]
-	run_expect_output "" [ "$_IdCId" == "8888881234567890123456789012345678901234567890123456789012345678" ]
-	run_expect_output "" [ "$_IdCId_short" == "123456" ]
-	run_expect_output "" [ "$_LSPrivK_line" == "$(grep ^LocalServerPrivKey <$CONF_TESTNET_IDS1_DOS)" ]
-	run_expect_output "" [ "$_LSPrivK" == "1234567890123456789012345678901234567890123456789012345678901234" ]
-	run_expect_output "" [ "$_LSPubK_line" == "$(grep ^LocalServerPublicKey <$CONF_TESTNET_IDS1_DOS)" ]
-	run_expect_output "" [ "$_LSPubK" == "9876543210987654321098765432109876543210987654321098765432109876" ]
-	run_expect_output "" [ "$_CAH_line" == "$(grep ^ChangeAcksHeight <$CONF_TESTNET_IDS1_DOS)" ]
-	run_expect_output "" [ "$_CAH" == "87432" ]
+	run_expect_error 0 [ "$_IdCId_line" == "$(grep ^IdentityChainID <$CONF_TESTNET_IDS1_DOS)" ]
+	run_expect_error 0 [ "$_IdCId" == "8888881234567890123456789012345678901234567890123456789012345678" ]
+	run_expect_error 0 [ "$_IdCId_short" == "123456" ]
+	run_expect_error 0 [ "$_LSPrivK_line" == "$(grep ^LocalServerPrivKey <$CONF_TESTNET_IDS1_DOS)" ]
+	run_expect_error 0 [ "$_LSPrivK" == "1234567890123456789012345678901234567890123456789012345678901234" ]
+	run_expect_error 0 [ "$_LSPubK_line" == "$(grep ^LocalServerPublicKey <$CONF_TESTNET_IDS1_DOS)" ]
+	run_expect_error 0 [ "$_LSPubK" == "9876543210987654321098765432109876543210987654321098765432109876" ]
+	run_expect_error 0 [ "$_CAH_line" == "$(grep ^ChangeAcksHeight <$CONF_TESTNET_IDS1_DOS)" ]
+	run_expect_error 0 [ "$_CAH" == "87432" ]
 }
 extract_factomd_keys_sets_variables_correctly_without_prefix
 
@@ -149,28 +149,28 @@ function get_factomd_keys_sets_variables_correctly_with_prefix() {
         get_factomd_keys root@localhost:2223 gprefixnoid
         get_factomd_keys root@localhost:2224 gprefixnocah
 
-	run_expect_output "" [ "$gprefixid_IdCId_line" == "$(grep ^IdentityChainID <$CONF_TESTNET_IDS1_DOS)" ]
-	run_expect_output "" [ "$gprefixid_IdCId" == "8888881234567890123456789012345678901234567890123456789012345678" ]
-	run_expect_output "" [ "$gprefixid_IdCId_short" == "123456" ]
-	run_expect_output "" [ "$gprefixid_LSPrivK_line" == "$(grep ^LocalServerPrivKey <$CONF_TESTNET_IDS1_DOS)" ]
-	run_expect_output "" [ "$gprefixid_LSPrivK" == "1234567890123456789012345678901234567890123456789012345678901234" ]
-	run_expect_output "" [ "$gprefixid_LSPubK_line" == "$(grep ^LocalServerPublicKey <$CONF_TESTNET_IDS1_DOS)" ]
-	run_expect_output "" [ "$gprefixid_LSPubK" == "9876543210987654321098765432109876543210987654321098765432109876" ]
-	run_expect_output "" [ "$gprefixid_CAH_line" == "$(grep ^ChangeAcksHeight <$CONF_TESTNET_IDS1_DOS)" ]
-	run_expect_output "" [ "$gprefixid_CAH" == "87432" ]
+	run_expect_error 0 [ "$gprefixid_IdCId_line" == "$(grep ^IdentityChainID <$CONF_TESTNET_IDS1_DOS)" ]
+	run_expect_error 0 [ "$gprefixid_IdCId" == "8888881234567890123456789012345678901234567890123456789012345678" ]
+	run_expect_error 0 [ "$gprefixid_IdCId_short" == "123456" ]
+	run_expect_error 0 [ "$gprefixid_LSPrivK_line" == "$(grep ^LocalServerPrivKey <$CONF_TESTNET_IDS1_DOS)" ]
+	run_expect_error 0 [ "$gprefixid_LSPrivK" == "1234567890123456789012345678901234567890123456789012345678901234" ]
+	run_expect_error 0 [ "$gprefixid_LSPubK_line" == "$(grep ^LocalServerPublicKey <$CONF_TESTNET_IDS1_DOS)" ]
+	run_expect_error 0 [ "$gprefixid_LSPubK" == "9876543210987654321098765432109876543210987654321098765432109876" ]
+	run_expect_error 0 [ "$gprefixid_CAH_line" == "$(grep ^ChangeAcksHeight <$CONF_TESTNET_IDS1_DOS)" ]
+	run_expect_error 0 [ "$gprefixid_CAH" == "87432" ]
 
-	run_expect_output "" [ "$gprefixnoid_IdCId_line" == "" ]
-	run_expect_output "" [ "$gprefixnoid_IdCId" == "" ]
-	run_expect_output "" [ "$gprefixnoid_IdCId_short" == "" ]
-	run_expect_output "" [ "$gprefixnoid_LSPrivK_line" == "" ]
-	run_expect_output "" [ "$gprefixnoid_LSPrivK" == "" ]
-	run_expect_output "" [ "$gprefixnoid_LSPubK_line" == "" ]
-	run_expect_output "" [ "$gprefixnoid_LSPubK" == "" ]
-	run_expect_output "" [ "$gprefixnoid_CAH_line" == "$(grep ^ChangeAcksHeight <$CONF_TESTNET_NOID_DOS)" ]
-	run_expect_output "" [ "$gprefixnoid_CAH" == "87432" ]
+	run_expect_error 0 [ "$gprefixnoid_IdCId_line" == "" ]
+	run_expect_error 0 [ "$gprefixnoid_IdCId" == "" ]
+	run_expect_error 0 [ "$gprefixnoid_IdCId_short" == "" ]
+	run_expect_error 0 [ "$gprefixnoid_LSPrivK_line" == "" ]
+	run_expect_error 0 [ "$gprefixnoid_LSPrivK" == "" ]
+	run_expect_error 0 [ "$gprefixnoid_LSPubK_line" == "" ]
+	run_expect_error 0 [ "$gprefixnoid_LSPubK" == "" ]
+	run_expect_error 0 [ "$gprefixnoid_CAH_line" == "$(grep ^ChangeAcksHeight <$CONF_TESTNET_NOID_DOS)" ]
+	run_expect_error 0 [ "$gprefixnoid_CAH" == "87432" ]
 
-	run_expect_output "" [ "$gprefixnocah_CAH_line" == "" ]
-	run_expect_output "" [ "$gprefixnocah_CAH" == "0" ]
+	run_expect_error 0 [ "$gprefixnocah_CAH_line" == "" ]
+	run_expect_error 0 [ "$gprefixnocah_CAH" == "0" ]
 }
 get_factomd_keys_sets_variables_correctly_with_prefix
 
@@ -186,15 +186,15 @@ function get_factomd_keys_sets_variables_correctly_without_prefix() {
 	_CAH=
         get_factomd_keys root@localhost:2222
 
-	run_expect_output "" [ "$_IdCId_line" == "$(grep ^IdentityChainID <$CONF_TESTNET_IDS1_DOS)" ]
-	run_expect_output "" [ "$_IdCId" == "8888881234567890123456789012345678901234567890123456789012345678" ]
-	run_expect_output "" [ "$_IdCId_short" == "123456" ]
-	run_expect_output "" [ "$_LSPrivK_line" == "$(grep ^LocalServerPrivKey <$CONF_TESTNET_IDS1_DOS)" ]
-	run_expect_output "" [ "$_LSPrivK" == "1234567890123456789012345678901234567890123456789012345678901234" ]
-	run_expect_output "" [ "$_LSPubK_line" == "$(grep ^LocalServerPublicKey <$CONF_TESTNET_IDS1_DOS)" ]
-	run_expect_output "" [ "$_LSPubK" == "9876543210987654321098765432109876543210987654321098765432109876" ]
-	run_expect_output "" [ "$_CAH_line" == "$(grep ^ChangeAcksHeight <$CONF_TESTNET_IDS1_DOS)" ]
-	run_expect_output "" [ "$_CAH" == "87432" ]
+	run_expect_error 0 [ "$_IdCId_line" == "$(grep ^IdentityChainID <$CONF_TESTNET_IDS1_DOS)" ]
+	run_expect_error 0 [ "$_IdCId" == "8888881234567890123456789012345678901234567890123456789012345678" ]
+	run_expect_error 0 [ "$_IdCId_short" == "123456" ]
+	run_expect_error 0 [ "$_LSPrivK_line" == "$(grep ^LocalServerPrivKey <$CONF_TESTNET_IDS1_DOS)" ]
+	run_expect_error 0 [ "$_LSPrivK" == "1234567890123456789012345678901234567890123456789012345678901234" ]
+	run_expect_error 0 [ "$_LSPubK_line" == "$(grep ^LocalServerPublicKey <$CONF_TESTNET_IDS1_DOS)" ]
+	run_expect_error 0 [ "$_LSPubK" == "9876543210987654321098765432109876543210987654321098765432109876" ]
+	run_expect_error 0 [ "$_CAH_line" == "$(grep ^ChangeAcksHeight <$CONF_TESTNET_IDS1_DOS)" ]
+	run_expect_error 0 [ "$_CAH" == "87432" ]
 }
 get_factomd_keys_sets_variables_correctly_without_prefix
 
