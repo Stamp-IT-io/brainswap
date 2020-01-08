@@ -42,3 +42,17 @@ function print_error_stack_exit_if_failed() {
 	return 0
 }
 
+function exit_if_failed() {
+	# Before anything else, we must save the last return value
+	_eif_last_return_value=$?
+
+	if [ "$_eif_last_return_value" != "0" ]; then
+		# Cannot declare local before because it would change $?
+		local return_value
+		return_value="${1:-$_eif_last_return_value}"
+		exit ${return_value}
+	fi
+
+	return 0
+}
+
