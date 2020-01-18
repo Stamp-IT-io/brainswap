@@ -93,7 +93,6 @@ function extract_conf_keys() {
 	eval ${prefix}_Net='${Net:-MAIN}'
 
 	# Extract Identity from config
-	eval ${prefix}'_conf="$conf_content"'
 	eval ${prefix}'_IdCId_line=$(echo "$conf_content" | '"grep -i '^[[:space:]]*IdentityChainID')"
 	eval ${prefix}'_IdCId=$(echo $'${prefix}'_IdCId_line | sed -n $SED_ID_SCRIPT)'
 	eval ${prefix}'_IdCId_short=$(echo $'${prefix}'_IdCId | cut -c 7-12)'
@@ -141,8 +140,9 @@ function get_factomd_keys() {
 	prefix=$2
 
 	# Obtain config from remote_node
-	must_succeed 'conf_content="$(get_factomd_conf $sudo $access_spec)"'
-	must_succeed 'extract_conf_keys $prefix <<<"$conf_content"'
+	eval 'conf_content="$(get_factomd_conf $sudo $access_spec)"'
+	print_error_stack_exit_if_failed "get_factomd_conf failed."
+	eval 'extract_conf_keys $prefix <<<"$conf_content"'
 
 	return 0
 }

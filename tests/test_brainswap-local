@@ -1,0 +1,525 @@
+#!/usr/bin/env run_bash_test
+
+SELF_DIR="$(dirname "${BASH_SOURCE[0]}")"
+
+source $SELF_DIR/../brainswap.sh
+
+CONF_NOID_BRAINSWAP=$SELF_DIR/files-test-factomd-conf/replace-noid-brainswap.conf
+CONF_WITHID_BRAINSWAP=$SELF_DIR/files-test-factomd-conf/replace-withid-brainswap.conf
+CONF_OTHERID_BRAINSWAP=$SELF_DIR/files-test-factomd-conf/replace-otherid-brainswap.conf
+
+SIMULATION_OTHERID=$SELF_DIR/files-test-factomd-conf/simulation-otherid.out
+SIMULATION_NOID=$SELF_DIR/files-test-factomd-conf/simulation-noid.out
+
+
+function brainswap_ensure_identity_complete_node1_return_true() {
+	local node1_IdCId_line node1_LSPrivK_line node1_LSPubK_line
+
+	node1_IdCId_line="IdentityChainID = 1234567890123456789012345678901234567890123456789012345678901234"
+	node1_LSPrivK_line="LocalServerPrivKey = 1234567890123456789012345678901234567890123456789012345678901234"
+	node1_LSPubK_line="LocalServerPublicKey = 1234567890123456789012345678901234567890123456789012345678901234"
+        run_expect_error 0 brainswap_ensure_identity_complete_node1
+}
+brainswap_ensure_identity_complete_node1_return_true
+
+function brainswap_ensure_identity_complete_node1_missing_IdCId_return_false() {
+	local node1_IdCId_line node1_LSPrivK_line node1_LSPubK_line
+
+	node1_LSPrivK_line="LocalServerPrivKey = 1234567890123456789012345678901234567890123456789012345678901234"
+	node1_LSPubK_line="LocalServerPublicKey = 1234567890123456789012345678901234567890123456789012345678901234"
+        run_expect_error 1 brainswap_ensure_identity_complete_node1
+}
+brainswap_ensure_identity_complete_node1_missing_IdCId_return_false
+
+function brainswap_ensure_identity_complete_node1_missing_PrivK_return_false() {
+	local node1_IdCId_line node1_LSPrivK_line node1_LSPubK_line
+
+	node1_IdCId_line="IdentityChainID = 1234567890123456789012345678901234567890123456789012345678901234"
+	node1_LSPubK_line="LocalServerPublicKey = 1234567890123456789012345678901234567890123456789012345678901234"
+        run_expect_error 1 brainswap_ensure_identity_complete_node1
+}
+brainswap_ensure_identity_complete_node1_missing_PrivK_return_false
+
+function brainswap_ensure_identity_complete_node1_missing_PubK_return_false() {
+	local node1_IdCId_line node1_LSPrivK_line node1_LSPubK_line
+
+	node1_IdCId_line="IdentityChainID = 1234567890123456789012345678901234567890123456789012345678901234"
+	node1_LSPrivK_line="LocalServerPrivKey = 1234567890123456789012345678901234567890123456789012345678901234"
+        run_expect_error 1 brainswap_ensure_identity_complete_node1
+}
+brainswap_ensure_identity_complete_node1_missing_PubK_return_false
+
+
+function brainswap_ensure_authority_and_ready_node1_return_true() {
+	local node1_factomd_flags
+
+	node1_factomd_flags="L___"
+	run_expect_error 0 brainswap_ensure_authority_and_ready_node1
+
+	node1_factomd_flags="A___"
+	run_expect_error 0 brainswap_ensure_authority_and_ready_node1
+}
+brainswap_ensure_authority_and_ready_node1_return_true
+
+function brainswap_ensure_authority_and_ready_node1_return_false() {
+	local node1_factomd_flags
+
+	node1_factomd_flags=
+	run_expect_error 1 brainswap_ensure_authority_and_ready_node1
+
+	node1_factomd_flags="____"
+	run_expect_error 1 brainswap_ensure_authority_and_ready_node1
+
+	node1_factomd_flags="__I_"
+	run_expect_error 1 brainswap_ensure_authority_and_ready_node1
+
+	node1_factomd_flags="L_I_"
+	run_expect_error 1 brainswap_ensure_authority_and_ready_node1
+
+	node1_factomd_flags="A_I_"
+	run_expect_error 1 brainswap_ensure_authority_and_ready_node1
+}
+brainswap_ensure_authority_and_ready_node1_return_false
+
+
+function brainswap_ensure_process_list_complete_node1_return_true() {
+	local node1_factomd_pl_stats
+
+	node1_factomd_pl_stats="OKOKOK"
+	run_expect_error 0 brainswap_ensure_process_list_complete_node1
+}
+brainswap_ensure_process_list_complete_node1_return_true
+
+function brainswap_ensure_process_list_complete_node1_return_false() {
+	local node1_factomd_pl_stats
+
+	run_expect_error 1 brainswap_ensure_process_list_complete_node1
+
+	node1_factomd_pl_stats="OKOK"
+	run_expect_error 1 brainswap_ensure_process_list_complete_node1
+
+	node1_factomd_pl_stats="NextNilOKOK"
+	run_expect_error 1 brainswap_ensure_process_list_complete_node1
+
+	node1_factomd_pl_stats="OKRawNilOK"
+	run_expect_error 1 brainswap_ensure_process_list_complete_node1
+
+	node1_factomd_pl_stats="OKOKPrevNil"
+	run_expect_error 1 brainswap_ensure_process_list_complete_node1
+}
+brainswap_ensure_process_list_complete_node1_return_false
+
+
+function brainswap_ensure_no_brainswap_pending_node1_return_true() {
+	local node1_factomd_nextheight node1_CAH
+
+	node1_factomd_nextheight=101
+	node1_CAH=100
+	run_expect_error 0 brainswap_ensure_no_brainswap_pending_node1
+
+	node1_factomd_nextheight=9999
+	node1_CAH=8888
+	run_expect_error 0 brainswap_ensure_no_brainswap_pending_node1
+
+	node1_factomd_nextheight=100000
+	node1_CAH=101
+	run_expect_error 0 brainswap_ensure_no_brainswap_pending_node1
+}
+brainswap_ensure_no_brainswap_pending_node1_return_true
+
+function brainswap_ensure_no_brainswap_pending_node1_return_false() {
+	local node1_factomd_nextheight node1_CAH
+
+	node1_factomd_nextheight=
+	node1_CAH=100
+	run_expect_error 2 brainswap_ensure_no_brainswap_pending_node1
+
+	node1_factomd_nextheight=100
+	node1_CAH=
+	run_expect_error 2 brainswap_ensure_no_brainswap_pending_node1
+
+	node1_factomd_nextheight=100
+	node1_CAH=100
+	run_expect_error 1 brainswap_ensure_no_brainswap_pending_node1
+
+	node1_factomd_nextheight=8888
+	node1_CAH=9999
+	run_expect_error 1 brainswap_ensure_no_brainswap_pending_node1
+}
+brainswap_ensure_no_brainswap_pending_node1_return_false
+
+
+function brainswap_ensure_not_minute_0_node1_return_true() {
+	local node1_factomd_minute
+
+	node1_factomd_minute=1
+	run_expect_error 0 brainswap_ensure_not_minute_0_node1
+}
+brainswap_ensure_not_minute_0_node1_return_true
+
+function brainswap_ensure_not_minute_0_node1_return_false() {
+	local node1_factomd_minute
+
+	run_expect_error 1 brainswap_ensure_not_minute_0_node1
+
+	node1_factomd_minute=0
+	run_expect_error 1 brainswap_ensure_not_minute_0_node1
+
+	node1_factomd_minute=a
+	run_expect_error 2 brainswap_ensure_not_minute_0_node1
+}
+brainswap_ensure_not_minute_0_node1_return_false
+
+
+function brainswap_ensure_same_network_return_true() {
+	local node1_Net node2_Net
+
+	node1_Net=LOCAL
+	node2_Net=LOCAL
+	run_expect_error 0 brainswap_ensure_same_network
+
+	node1_Net=MAIN
+	node2_Net=MAIN
+	run_expect_error 0 brainswap_ensure_same_network
+}
+brainswap_ensure_same_network_return_true
+
+function brainswap_ensure_same_network_return_false() {
+	local node1_Net node2_Net
+
+	run_expect_error 1 brainswap_ensure_same_network
+
+	node1_Net=
+	node2_Net=
+	run_expect_error 2 brainswap_ensure_same_network
+
+	node1_Net=MAIN
+	node2_Net=
+	run_expect_error 2 brainswap_ensure_same_network
+
+	node1_Net=
+	node2_Net=MAIN
+	run_expect_error 2 brainswap_ensure_same_network
+
+	node1_Net=LOCAL
+	node2_Net=MAIN
+	run_expect_error 1 brainswap_ensure_same_network
+}
+brainswap_ensure_same_network_return_false
+
+
+function brainswap_ensure_not_same_identity_return_true() {
+	local node1_IdCId node2_IdCId
+
+	node1_IdCId="1234567890123456789012345678901234567890123456789012345678901234"
+	node2_IdCId="2345678901234567890123456789012345678901234567890123456789012345"
+	run_expect_error 0 brainswap_ensure_not_same_identity
+}
+brainswap_ensure_not_same_identity_return_true
+
+function brainswap_ensure_not_same_identity_return_false() {
+	local node1_IdCId node2_IdCId
+
+	run_expect_error 1 brainswap_ensure_not_same_identity
+
+	node1_IdCId=
+	node2_IdCId=
+	run_expect_error 2 brainswap_ensure_not_same_identity
+
+	node1_IdCId=
+	node2_IdCId="2345678901234567890123456789012345678901234567890123456789012345"
+	run_expect_error 2 brainswap_ensure_not_same_identity
+
+	node1_IdCId="1234567890123456789012345678901234567890123456789012345678901234"
+	node2_IdCId=
+	run_expect_error 2 brainswap_ensure_not_same_identity
+}
+brainswap_ensure_not_same_identity_return_false
+
+
+function brainswap_ensure_ready_node2_return_true() {
+	local node2_factomd_flags
+
+	node2_factomd_flags="____"
+	run_expect_error 0 brainswap_ensure_ready_node2
+
+	node2_factomd_flags="L___"
+	run_expect_error 0 brainswap_ensure_ready_node2
+
+	node2_factomd_flags="A___"
+	run_expect_error 0 brainswap_ensure_ready_node2
+}
+brainswap_ensure_ready_node2_return_true
+
+function brainswap_ensure_ready_node2_return_false() {
+	local node2_factomd_flags
+
+	run_expect_error 1 brainswap_ensure_ready_node2
+
+	node2_factomd_flags=
+	run_expect_error 1 brainswap_ensure_ready_node2
+
+	node2_factomd_flags="__I_"
+	run_expect_error 1 brainswap_ensure_ready_node2
+
+	node2_factomd_flags="L_I_"
+	run_expect_error 1 brainswap_ensure_ready_node2
+
+	node2_factomd_flags="A_I_"
+	run_expect_error 1 brainswap_ensure_ready_node2
+}
+brainswap_ensure_ready_node2_return_false
+
+
+function brainswap_ensure_process_list_complete_node2_return_true() {
+	local node2_factomd_pl_stats
+
+	node2_factomd_pl_stats="OKOKOK"
+	run_expect_error 0 brainswap_ensure_process_list_complete_node2
+}
+brainswap_ensure_process_list_complete_node2_return_true
+
+function brainswap_ensure_process_list_complete_node2_return_false() {
+
+	run_expect_error 1 brainswap_ensure_process_list_complete_node2
+
+	node2_factomd_pl_stats="OKOK"
+	run_expect_error 1 brainswap_ensure_process_list_complete_node2
+
+	node2_factomd_pl_stats="NextNilOKOK"
+	run_expect_error 1 brainswap_ensure_process_list_complete_node2
+
+	node2_factomd_pl_stats="OKRawNilOK"
+	run_expect_error 1 brainswap_ensure_process_list_complete_node2
+
+	node2_factomd_pl_stats="OKOKPrevNil"
+	run_expect_error 1 brainswap_ensure_process_list_complete_node2
+}
+brainswap_ensure_process_list_complete_node2_return_false
+
+
+function brainswap_ensure_no_brainswap_pending_node2_return_true() {
+	local node2_factomd_nextheight node2_CAH
+
+	node2_factomd_nextheight=101
+	node2_CAH=100
+	run_expect_error 0 brainswap_ensure_no_brainswap_pending_node2
+
+	node2_factomd_nextheight=9999
+	node2_CAH=8888
+	run_expect_error 0 brainswap_ensure_no_brainswap_pending_node2
+
+	node2_factomd_nextheight=100000
+	node2_CAH=101
+	run_expect_error 0 brainswap_ensure_no_brainswap_pending_node2
+}
+brainswap_ensure_no_brainswap_pending_node2_return_true
+
+function brainswap_ensure_no_brainswap_pending_node2_return_false() {
+	local node2_factomd_nextheight node2_CAH
+
+	node2_factomd_nextheight=
+	node2_CAH=100
+	run_expect_error 2 brainswap_ensure_no_brainswap_pending_node2
+
+	node2_factomd_nextheight=100
+	node2_CAH=
+	run_expect_error 2 brainswap_ensure_no_brainswap_pending_node2
+
+	node2_factomd_nextheight=100
+	node2_CAH=100
+	run_expect_error 1 brainswap_ensure_no_brainswap_pending_node2
+
+	node2_factomd_nextheight=8888
+	node2_CAH=9999
+	run_expect_error 1 brainswap_ensure_no_brainswap_pending_node2
+}
+brainswap_ensure_no_brainswap_pending_node2_return_false
+
+
+function brainswap_ensure_same_block_height_return_true() {
+	local node1_factomd_nextheight node2_factomd_nextheight
+
+	node1_factomd_nextheight=999
+	node2_factomd_nextheight=999
+	run_expect_error 0 brainswap_ensure_same_block_height
+
+	node1_factomd_nextheight=2222222
+	node2_factomd_nextheight=2222222
+	run_expect_error 0 brainswap_ensure_same_block_height
+}
+brainswap_ensure_same_block_height_return_true
+
+function brainswap_ensure_same_block_height_return_false() {
+	local node1_factomd_nextheight node2_factomd_nextheight
+
+	node1_factomd_nextheight=
+	node2_factomd_nextheight=999
+	run_expect_error 2 brainswap_ensure_same_block_height
+
+	node1_factomd_nextheight=2222222
+	node2_factomd_nextheight=
+	run_expect_error 2 brainswap_ensure_same_block_height
+
+	node1_factomd_nextheight=998
+	node2_factomd_nextheight=999
+	run_expect_error 1 brainswap_ensure_same_block_height
+
+	node1_factomd_nextheight=2222222
+	node2_factomd_nextheight=2222223
+	run_expect_error 1 brainswap_ensure_same_block_height
+}
+brainswap_ensure_same_block_height_return_false
+
+
+function brainswap_ensure_same_minute_return_true() {
+	local node1_factomd_minute node2_factomd_minute
+
+	node1_factomd_minute=2
+	node2_factomd_minute=2
+	run_expect_error 0 brainswap_ensure_same_minute
+}
+brainswap_ensure_same_minute_return_true
+
+function brainswap_ensure_same_minute_return_false() {
+	local node1_factomd_minute node2_factomd_minute
+
+	node1_factomd_minute=a
+	node2_factomd_minute=4
+	run_expect_error 2 brainswap_ensure_same_minute
+
+	node1_factomd_minute=2
+	node2_factomd_minute=z
+	run_expect_error 2 brainswap_ensure_same_minute
+
+	node1_factomd_minute=
+	node2_factomd_minute=2
+	run_expect_error 2 brainswap_ensure_same_minute
+
+	node1_factomd_minute=2
+	node2_factomd_minute=
+	run_expect_error 2 brainswap_ensure_same_minute
+
+	node1_factomd_minute=2
+	node2_factomd_minute=4
+	run_expect_error 1 brainswap_ensure_same_minute
+}
+brainswap_ensure_same_minute_return_false
+
+
+function brainswap_calculate_safe_swap_height_output_correct() {
+	local node1_factomd_minute node1_factomd_nextheight
+
+	for m in $(seq 0 0); do
+		node1_factomd_minute=$m
+		node1_factomd_nextheight=1234
+		run_expect_output 1234 brainswap_calculate_safe_swap_height
+	done
+
+	node1_factomd_minute=9
+	node1_factomd_nextheight=2222222
+	run_expect_output 2222223 brainswap_calculate_safe_swap_height
+}
+brainswap_calculate_safe_swap_height_output_correct
+
+function brainswap_calculate_safe_swap_height_return_false() {
+	local node1_factomd_minute node1_factomd_nextheight
+
+	node1_factomd_minute=9
+	node1_factomd_nextheight=
+	run_expect_error 2 brainswap_calculate_safe_swap_height
+
+	node1_factomd_minute=
+	node1_factomd_nextheight=2222222
+	run_expect_error 2 brainswap_calculate_safe_swap_height
+
+	node1_factomd_minute=a
+	node1_factomd_nextheight=2222222
+	run_expect_error 2 brainswap_calculate_safe_swap_height
+
+	node1_factomd_minute=0
+	node1_factomd_nextheight=b
+	run_expect_error 2 brainswap_calculate_safe_swap_height
+}
+brainswap_calculate_safe_swap_height_return_false
+
+
+function brainswap_calculate_swap_wait_minutes_output_correct() {
+	local node1_factomd_minute node1_factomd_nextheight
+
+	node1_factomd_minute=1
+	node1_factomd_nextheight=1234
+	run_expect_output 9 brainswap_calculate_swap_wait_minutes 1234
+
+	node1_factomd_minute=8
+	node1_factomd_nextheight=1234
+	run_expect_output 2 brainswap_calculate_swap_wait_minutes 1234
+
+	node1_factomd_minute=9
+	node1_factomd_nextheight=1234
+	run_expect_output 11 brainswap_calculate_swap_wait_minutes 1235
+}
+brainswap_calculate_swap_wait_minutes_output_correct
+
+function brainswap_calculate_swap_wait_minutes_return_false() {
+	local node1_factomd_minute node1_factomd_nextheight
+
+	node1_factomd_minute=
+	node1_factomd_nextheight=1234
+	run_expect_error 2 brainswap_calculate_swap_wait_minutes
+
+	node1_factomd_minute=1
+	node1_factomd_nextheight=
+	run_expect_error 2 brainswap_calculate_swap_wait_minutes
+
+	node1_factomd_minute=a
+	node1_factomd_nextheight=1234
+	run_expect_error 2 brainswap_calculate_swap_wait_minutes
+
+	node1_factomd_minute=1
+	node1_factomd_nextheight=b
+	run_expect_error 2 brainswap_calculate_swap_wait_minutes
+}
+brainswap_calculate_swap_wait_minutes_return_false
+
+
+function brainswap_simulate_brainswap_output_correct() {
+	local node1_conf node1_IdCId node1_LSPrivK node1_LSPubK node2_conf node2_IdCId node2_LSPrivK node2_LSPubK simulation_output normalized_output
+
+	node1=withid
+	node1_conf="$(cat $CONF_WITHID_BRAINSWAP)"
+	node1_IdCId=8888881234567890123456789012345678901234567890123456789012345678
+	node1_LSPrivK=1234567890123456789012345678901234567890123456789012345678901234
+	node1_LSPubK=9876543210987654321098765432109876543210987654321098765432109876
+	node2=noid
+	node2_conf="$(cat $CONF_NOID_BRAINSWAP)"
+	node2_IdCId=8888886789012345678901234567890123456789012345678901234567890123
+	node2_LSPrivK=6789012345678901234567890123456789012345678901234567890123456789
+	node2_LSPubK=4321098765432109876543210987654321098765432109876543210987654321
+
+	simulation_output=$(brainswap_simulate_brainswap 123456 2>&1)
+	expect_error 0
+
+	# Remove temporary file names and dates, which can change from one run to another
+	normalized_output=$(echo "$simulation_output" | sed 's/^---.*$/---/; s/^+++.*$/+++/')
+	run_expect_output "$(cat $SIMULATION_NOID)" echo "$normalized_output"
+
+	node1=withid
+	node1_conf="$(cat $CONF_WITHID_BRAINSWAP)"
+	node1_IdCId=8888881234567890123456789012345678901234567890123456789012345678
+	node1_LSPrivK=1234567890123456789012345678901234567890123456789012345678901234
+	node1_LSPubK=9876543210987654321098765432109876543210987654321098765432109876
+	node2=otherid
+	node2_conf="$(cat $CONF_OTHERID_BRAINSWAP)"
+	node2_IdCId=8888886789012345678901234567890123456789012345678901234567890123
+	node2_LSPrivK=6789012345678901234567890123456789012345678901234567890123456789
+	node2_LSPubK=4321098765432109876543210987654321098765432109876543210987654321
+
+	simulation_output=$(brainswap_simulate_brainswap 123456 2>&1)
+	expect_error 0
+
+	# Remove temporary file names and dates, which can change from one run to another
+	normalized_output=$(echo "$simulation_output" | sed 's/^---.*$/---/; s/^+++.*$/+++/')
+	run_expect_output "$(cat $SIMULATION_OTHERID)" echo "$normalized_output"
+}
+brainswap_simulate_brainswap_output_correct

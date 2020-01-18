@@ -53,6 +53,21 @@ function get_factomd_details() {
 
 	# Extract information about factomd
 	eval read ${prefix}_factomd_flags ${prefix}_factomd_savedheight ${prefix}_factomd_savedheight_mr ${prefix}_factomd_prevheight ${prefix}_factomd_currheight ${prefix}_factomd_nextheight ${prefix}_factomd_minute ${prefix}_factomd_pl_stats <<<$details
+
+	# Ensure _factomd_minute is a number between 0 and 9
+	if eval [ 0 -le "\$${prefix}_factomd_minute" -a "\$${prefix}_factomd_minute" -le "9" ]; then
+		# Here we are sure _factomd_minute is a number
+		true
+	else
+		# This would mean there is an error in the sed script or the parsing of its output
+		eval print_error_stack_exit "$prefix minute \$${prefix}_factomd_minute, is not a number."
+	fi
+
+	# Ensure _factomd_nextheight is a block number
+	if ! eval echo "\$${prefix}_factomd_nextheight" | egrep -q "^[0-9]{5,7}$"; then
+		# This would mean there is an error in the sed script or the parsing of its output
+		eval print_error_stack_exit "$prefix next height \$${prefix}_factomd_nextheight does not look like a block number."
+	fi
 }
 
 

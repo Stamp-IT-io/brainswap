@@ -16,10 +16,7 @@
 # DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-source "$(dirname "${BASH_SOURCE[0]}")/error.sh"
-source "$(dirname "${BASH_SOURCE[0]}")/ssh.sh"
-source "$(dirname "${BASH_SOURCE[0]}")/factomd-conf.sh"
-source "$(dirname "${BASH_SOURCE[0]}")/factomd-status.sh"
+source "$(dirname "${BASH_SOURCE[0]}")/brainswap.sh"
 
 # Uncomment the following line to turn on debugging
 #set -x
@@ -44,10 +41,7 @@ function usage() {
 	echo "   e.g.: brainswap user@jumphost,user@authoritynode user@jumphost,user@followernode"
 }
 
-SUDO1=
-SUDO2=
 NOSWAP=
-BLOCK_DELAY=0
 
 while [ "$1" != "" ]; do
 	case "$1" in
@@ -56,17 +50,13 @@ while [ "$1" != "" ]; do
 		exit 0
 		;;
 	"--sudo")
-		SUDO1=sudo
-		SUDO2=sudo
 		sudo1="--sudo"
 		sudo2="--sudo"
 		;;
 	"--sudo1")
-		SUDO1=sudo
 		sudo1="--sudo"
 		;;
 	"--sudo2")
-		SUDO2=sudo
 		sudo2="--sudo"
 		;;
 	"--noswap")
@@ -108,192 +98,75 @@ fi
 
 # We do not want to brainswap a node with itself!
 if [ "$node1" = "$node2" ]; then
-	print_error_stack_exit "$node1 and $node2 are the same nodes, cannot brainswap."
+	print_error_stack_exit "$node1 and $node2 are the same nodes, no brainswap needed."
 fi
 
 echo "This is a pre-alpha version of brainswap. You should not use it except to give feedback." >&2
 exit 1
 
+#########
+# Accessing node 1 to obtain and validate some informations...
 
-# Make sure config is writable before any modification si done
+[ "$QUIET" != 1 ] && echo "Accessing factomd config of $node1..." >&2
+# Make sure config is writable before any modification si attempted
 ensure_factomd_conf_writable $sudo1 $node1
 
-# Obtain config from node1
-node1_conf="$(get_factomd_conf $sudo1 $access_spec)"; exit_if_failed
-extract_conf_keys node1 <<<"$node1_conf"
+brainswap_get_node1_conf
 
-# Ensure an identiy is in node1 config file
-if [ -z "$node1_IdCId_line" -o -z "$node1_LSPrivK_line" -o -z "$node1_LSPubK_line" ]; then
-	# Technically, we could do a brainswap, but it is probably not what is intended
-	print_error_stack_exit "$node1 has incomplete identity set in factomd.conf."
-fi
+brainswap_ensure_identity_complete_node1
 
-# Obtain factomd version from node1
-VERSION1=$(get_factomd_version $node1)
-
-# Obtain information about factomd from node1
+[ "$QUIET" != 1 ] && echo "Getting details from running factomd at $node1..." >&2
 get_factomd_details $node1 node1
 
-# Ensure node1 is an authority node and operating
-if [ "$node1_factomd_flags" != "A___" -a "$node1_factomd_flags" != "L___" ]; then
-	# We could do a brainswap, but it is probably not what is intended
-	print_error_stack_exit "$node1 is not an authority node (or in ignore mode) no need for brainswap ($node1_factomd_flags)."
-fi
+brainswap_ensure_authority_and_ready_node1
 
-# Ensure there is no <nil> in the process list of node1
-if [ "$node1_factomd_pl_stats" != "OKOKOK" ]; then
-	print_error_stack_exit "$node1 process list is incomplete, there might be some network instability ($node1_factomd_pl_stats)."
-fi
+brainswap_ensure_process_list_complete_node1
 
-# Ensure $node1_factomd_minute is a number between 0 and 9
-if [ 0 -le "$node1_factomd_minute" -a "$node1_factomd_minute" -le "9" ]; then
-	# Here we are sure $node1_factomd_minute is a number
-	true
-else
-	print_error_stack_exit "$node1 minute $node1_factomd_minute, is not a number."
-fi
+brainswap_ensure_no_brainswap_pending_node1
 
-# Ensure $node1_factomd_nextheight is a block number
-if ! echo "$node1_factomd_nextheight" | egrep -q "^[0-9]{5,7}$"; then
-	print_error_stack_exit "$node1 next height $node1_factomd_nextheight does not look like a block number."
-fi
-
-# Ensure no brainswap is pending on node1
-if [ "$node1_factomd_nextheight" -le "$node1_CAH" ]; then
-	print_error_stack_exit "$node1 next height $node1_factomd_nextheight is not greater than config ChangeAcksHeight $node1_CAH (pending brainswap?)"
-fi
-
-# During minute 0 we cannot tell if the nodes are really following minutes, so we do not initiate a brainswap
-if [ "$node1_factomd_minute" -eq "0" ]; then
-	print_error_stack_exit "$node1 in minute 0, wait for one minute and try again."
-fi
+brainswap_ensure_not_minute_0_node1
 
 #########
-# Accessing node 2 to obtain some informations...
+# Accessing node 2 to obtain and validate some informations...
 
-# Command to login to node2
-SSH2="do_ssh $node2"
-
-# Make sure config is writable before any modification si done
+[ "$QUIET" != 1 ] && echo "Accessing factomd config of $node2..." >&2
+# Make sure config is writable before any modification si attempted
 ensure_factomd_conf_writable $sudo2 $node2
 
-# Obtain config from node2
-get_factomd_keys $sudo2 $node2 node2
+brainswap_get_node2_conf
 
-# Ensure node1 and node 2 are on the same network
-if [ "$node1_Net" != "$node2_Net" ]; then
-	print_error_stack_exit "$node1 and $node2 are on two different networks, cannot brainswap."
-fi
+brainswap_ensure_same_network
 
-# Find the place where the new identity will be inserted in config file (CONF2_APPEND is a sed script)
-if echo "$node2_conf" | grep -q -i '^[[:space:]]*;*[[:space:]]*BRAINSWAP_ID_BELOW'; then
-	CONF2_APPEND='/^[[:space:]]*;*[[:space:]]*BRAINSWAP_ID_BELOW/a\'
-else
-	if echo "$node2_conf" | grep -q -i '^[[:space:]]*\[app\]'; then
-		CONF2_APPEND='/^[[:space:]]*\[app\]/a\'
-	else
-		print_error_stack_exit "$node2 factomd.conf has neither [app] section nor commented line with BRAINSWAP_ID_BELOW."
-	fi
-fi
+# Identity is optional for node2
+brainswap_ensure_not_same_identity
 
-# For node2, we do not expect an Identity in config file (but there might be one, it's Ok)...
-# ...but we ensure node1 and node 2 have not the same identity in their config files
-if [ "$node1_IdCId" = "$node2_IdCId" ]; then
-	print_error_stack_exit "$node1 and $node2 have the same identity in their config files. (Same node?)"
-fi
-
-[ "$QUIET" != 1 ] && echo "Getting factomd version from $node2..." >&2
-
-# Obtain factomd version from node2
-VERSION2=$(get_factomd_version $node2)
-
-[ "$QUIET" != 1 ] && echo "Getting factomd details from $node2..." >&2
-
-# Obtain information about factomd from node2
+[ "$QUIET" != 1 ] && echo "Getting details from running factomd at $node2..." >&2
 get_factomd_details $node2 node2
 
-# Ensure node2 is ready for brainswap
-if [ "$node2_factomd_flags" != "A___" -a "$node2_factomd_flags" != "L___" -a "$node2_factomd_flags" != "____" ]; then
-	print_error_stack_exit "$0: $node2 is not ready for brainswap ($node2_factomd_flags)."
-fi
+brainswap_ensure_ready_node2
 
-# Ensure there is no <nil> in the process list of node2
-if [ "$node2_factomd_pl_stats" != "OKOKOK" ]; then
-	print_error_stack_exit "$0: $node2 process list is incomplete, there might be some network instability ($node2_factomd_pl_stats)."
-fi
+brainswap_ensure_process_list_complete_node2
 
-# Ensure $node2_factomd_minute is a number between 0 and 9
-if [ 0 -le "$node2_factomd_minute" -a "$node2_factomd_minute" -le "9" ]; then
-	# Here we are sure $node2_factomd_minute is a number
-	true
-else
-	print_error_stack_exit "$0: $node2 minute $node2_factomd_minute, is not a number."
-fi
+brainswap_ensure_no_brainswap_pending_node2
 
-# Ensure $node2_factomd_nextheight is a block number
-if ! echo "$node2_factomd_nextheight" | egrep -q "^[0-9]{5,7}$"; then
-	print_error_stack_exit "$0: $node2 next height $node2_factomd_nextheight does not seem to be a block number."
-fi
+brainswap_ensure_same_block_height
 
-# Ensure no brainswap is pending on node 2
-if [ "$node2_factomd_nextheight" -le "$node2_CAH" ]; then
-	print_error_stack_exit "$0: $node2 next height $node2_factomd_nextheight not greater than config ChangeAcksHeight $node2_CAH (pending brainswap?)"
-fi
+brainswap_ensure_same_minute
 
-# Ensure node1 and node2 are on the same block height
-if [ "$node1_factomd_nextheight" != "$node2_factomd_nextheight" ]; then
-	print_error_stack_exit "$0: $node1 and $node2 are not on the same block (next: $node1_factomd_nextheight, $node2_factomd_nextheight) try again in a few seconds."
-fi
+change_height=$(brainswap_calculate_safe_swap_height)
+swap_wait=$(calculate_swap_wait_minutes $change_height)
 
-# Ensure node1 and node2 are on the same minute
-if [ "$node1_factomd_minute" != "$node2_factomd_minute" ]; then
-	print_error_stack_exit "$0: $node1 and $node2 are not on the same minute ($node1_factomd_minute, $node2_factomd_minute) try again in a few seconds."
-fi
+[ "$QUIET" != 1 ] && echo "Ready to brainswap at block height $change_height, in about $swap_wait minutes:" >&2
 
-# Calculate time before swap and ChangeAcksHeight
-CHANGE_HEIGHT=$node1_factomd_nextheight
-SWAP_WAIT=$((10 - $node1_factomd_minute))
-if [ "$node1_factomd_minute" -eq 9 ]; then
-	# If we are on minute 9, we are too close to next block, we wait for one more block
-	SWAP_WAIT=$(($SWAP_WAIT + 10))
-	CHANGE_HEIGHT=$(($CHANGE_HEIGHT + 1))
-fi
-# Add a delay of a few blocks?
-CHANGE_HEIGHT=$(($CHANGE_HEIGHT + $BLOCK_DELAY))
-SWAP_WAIT=$(($SWAP_WAIT + $BLOCK_DELAY * 10))
-
-# Generating new factomd.conf for node1
-new_conf1="$(replace_conf_identity "$node1_conf" $node2_IdCId $node2_LSPrivK $node2_LSPubK $CHANGE_HEIGHT)"
-
-# Generating new factomd.conf for node2
-new_conf2=$(replace_conf_identity "$node2_conf" $node1_IdCId $node1_LSPrivK $node1_LSPubK $CHANGE_HEIGHT)"
-
-####################
-# Ready to initiate brainswap
-if [ "$QUIET" != 1 ]; then
-	echo "Ready to brainswap at block height $CHANGE_HEIGHT, in about $SWAP_WAIT minutes:" >&2
-	echo "--------" >&2
-	echo "Node1: $node1:" >&2
-	diff -u <(echo "$node1_conf") <(echo "$new_conf1)
-	echo "--------" >&2
-	echo "Node2: $node2:" >&2
-	diff -u <(echo "$node2_conf") <(echo "$new_conf2)
-	echo "--------" >&2
-fi
+brainswap_simulate_brainswap $change_height
 
 if [ "$NOSWAP" = "1" ]; then
 	echo $0: "--noswap specified, not brainswapping."
 	exit 0
 fi
 
-[ "$QUIET" != 1 ] && echo "Rewriting factomd.conf on $node1..." >&2
-(put_factomd_conf $node1 "$new_conf1" 2>/dev/null)	# We replace the error message, if any (subshell to prevent exit)
-print_error_stack_exit_if_failed "$0: Error overwriting $(get_factomd_conf_path $node1) on $node1, BRAINSWAP FAILED, you must check that config was not overwritten."
+brainswap_do_brainswap $change_height
 
-[ "$QUIET" != 1 ] && echo "Rewriting factomd.conf on $node2..." >&2
-(put_factomd_conf $node2 "$new_conf2" 2>/dev/null)	# We replace the error message, if any (subshell to prevent exit)
-print_error_stack_exit_if_failed "$0: Error overwriting $CONF_PATH on $(get_factomd_conf_path $node2), BRAINSWAP FAILED, you must check that both nodes do not have the same identity."
-
-echo "Brainswap initiated successfully for block $CHANGE_HEIGHT, in about $SWAP_WAIT minutes"
+echo "Brainswap initiated successfully for block $change_height, in about $swap_wait minutes"
 
 exit 0
