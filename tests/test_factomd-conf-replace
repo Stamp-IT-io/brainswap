@@ -26,10 +26,10 @@ trap _on_exit EXIT
 
 # Tests
 function bad_param_return_false() {
-	run_expect_error 1 replace_conf_identity "$(cat $CONF_NOID_APP)" "BadIdChain" "$LS_PRIVK1" "$LS_PUBK1" "$CAH1"
-	run_expect_error 1 replace_conf_identity "$(cat $CONF_NOID_APP)" "$IDCHAIN_ID1" "987" "$LS_PUBK1" "$CAH1"
-	run_expect_error 1 replace_conf_identity "$(cat $CONF_NOID_APP)" "$IDCHAIN_ID1" "$LS_PRIVK1" "654" "$CAH1"
-	run_expect_error 1 replace_conf_identity "$(cat $CONF_NOID_APP)" "$IDCHAIN_ID1" "$LS_PRIVK1" "$LS_PUBK1" "BadCAH"
+	run_expect_error 1 replace_conf_identity "$(cat $CONF_NOID_APP)" "$CAH1" "BadIdChain" "$LS_PRIVK1" "$LS_PUBK1"
+	run_expect_error 1 replace_conf_identity "$(cat $CONF_NOID_APP)" "$CAH1" "$IDCHAIN_ID1" "987" "$LS_PUBK1"
+	run_expect_error 1 replace_conf_identity "$(cat $CONF_NOID_APP)" "$CAH1" "$IDCHAIN_ID1" "$LS_PRIVK1" "654"
+	run_expect_error 1 replace_conf_identity "$(cat $CONF_NOID_APP)" "BadCAH" "$IDCHAIN_ID1" "$LS_PRIVK1" "$LS_PUBK1"
 }
 bad_param_return_false
 
@@ -47,19 +47,19 @@ remove_id_app_with_spaces
 
 function replace_noid_app() {
 	run_expect_output "$(cat $CONF_WITHID_APP)" \
-		replace_conf_identity "$(cat $CONF_NOID_APP)" "$IDCHAIN_ID1" "$LS_PRIVK1" "$LS_PUBK1" "$CAH1"
+		replace_conf_identity "$(cat $CONF_NOID_APP)" "$CAH1" "$IDCHAIN_ID1" "$LS_PRIVK1" "$LS_PUBK1"
 }
 replace_noid_app
 
 function replace_noid_brainswap() {
 	run_expect_output "$(cat $CONF_WITHID_BRAINSWAP)" \
-		replace_conf_identity "$(cat $CONF_NOID_BRAINSWAP)" "$IDCHAIN_ID1" "$LS_PRIVK1" "$LS_PUBK1" "$CAH1"
+		replace_conf_identity "$(cat $CONF_NOID_BRAINSWAP)" "$CAH1" "$IDCHAIN_ID1" "$LS_PRIVK1" "$LS_PUBK1"
 }
 replace_noid_brainswap
 
 function replace_id_brainswap() {
 	run_expect_output "$(cat $CONF_WITHID_BRAINSWAP)" \
-		replace_conf_identity "$(cat $CONF_NOID_BRAINSWAP)" "$IDCHAIN_ID1" "$LS_PRIVK1" "$LS_PUBK1" "$CAH1"
+		replace_conf_identity "$(cat $CONF_NOID_BRAINSWAP)" "$CAH1" "$IDCHAIN_ID1" "$LS_PRIVK1" "$LS_PUBK1"
 }
 replace_id_brainswap
 

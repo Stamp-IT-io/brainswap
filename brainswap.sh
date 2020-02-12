@@ -5,7 +5,7 @@ source "$(dirname "${BASH_SOURCE[0]}")/factomd-conf.sh"
 source "$(dirname "${BASH_SOURCE[0]}")/factomd-status.sh"
 
 function brainswap_get_node1_conf() {
-	for v in node1 node1_conf; do
+	for v in node1; do
 		test -v $v
 		print_error_stack_exit_if_failed "Assertion failed: $v not set"
 	done
@@ -89,7 +89,7 @@ function brainswap_get_node2_conf() {
 
 	# Obtain config from node2
 	node2_conf="$(get_factomd_conf $sudo2 $node2)"; exit_if_failed
-	extract_conf_keys node2 <<<"$node1_conf"
+	extract_conf_keys node2 <<<"$node2_conf"
 }
 
 
@@ -243,10 +243,10 @@ function brainswap_simulate_brainswap() {
 	fi
 
 	# Generating new factomd.conf for node1
-	new_conf1="$(replace_conf_identity "$node1_conf" $node2_IdCId $node2_LSPrivK $node2_LSPubK $change_height)"
+	new_conf1="$(replace_conf_identity "$node1_conf" "$change_height" "$node2_IdCId" "$node2_LSPrivK" "$node2_LSPubK")"
 
 	# Generating new factomd.conf for node2
-	new_conf2="$(replace_conf_identity "$node2_conf" $node1_IdCId $node1_LSPrivK $node1_LSPubK $change_height)"
+	new_conf2="$(replace_conf_identity "$node2_conf" "$change_height" "$node1_IdCId" "$node1_LSPrivK" "$node1_LSPubK")"
 
 	if [ "$QUIET" != 1 ]; then
 		echo "--------" >&2
@@ -265,7 +265,7 @@ function brainswap_do_brainswap() {
 		print_error_stack_exit_if_failed "Assertion failed: $v not set"
 	done
 
-	local change_height swap_wait new_conf1 new_conf2
+	local change_height new_conf1 new_conf2
 	change_height=$1
 
 	if ! [ "$change_height" -gt 0 ]; then
@@ -273,15 +273,15 @@ function brainswap_do_brainswap() {
 	fi
 
 	# Last check to make sure change_height value is sane (brainswap should be effective in less than an hour)
-	if ! [ "$(calculate_swap_wait_minutes $change_height)" -lt 60 ]; then
+	if ! [ "$(brainswap_calculate_swap_wait_minutes $change_height)" -lt 60 ]; then
 		print_error_stack_exit "Block $change_height is too far in the future, not a good idea"
 	fi
 
 	# Generating new factomd.conf for node1
-	new_conf1="$(replace_conf_identity "$node1_conf" $node2_IdCId $node2_LSPrivK $node2_LSPubK $change_height)"
+	new_conf1="$(replace_conf_identity "$node1_conf" "$change_height" "$node2_IdCId" "$node2_LSPrivK" "$node2_LSPubK")"
 
 	# Generating new factomd.conf for node2
-	new_conf2="$(replace_conf_identity "$node2_conf" $node1_IdCId $node1_LSPrivK $node1_LSPubK $change_height)"
+	new_conf2="$(replace_conf_identity "$node2_conf" "$change_height" "$node1_IdCId" "$node1_LSPrivK" "$node1_LSPubK")"
 
 	[ "$QUIET" != 1 ] && echo "Rewriting factomd.conf on $node1..." >&2
 	(put_factomd_conf $node1 "$new_conf1" 2>/dev/null)	# We replace the error message, if any (subshell to prevent exit)

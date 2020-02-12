@@ -173,10 +173,10 @@ function replace_conf_identity() {
 
 	# Also honors QUIET=1 global variable
 	conf_orig="$1"
-	IdCId="$2"
-	LSPrivK="$3"
-	LSPubK="$4"
-	CAH="$5"
+	CAH="$2"
+	IdCId="$3"
+	LSPrivK="$4"
+	LSPubK="$5"
 
 	# Check the first line to determine line ending
 	dos=""
