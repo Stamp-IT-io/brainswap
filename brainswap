@@ -154,7 +154,7 @@ brainswap_ensure_same_block_height
 brainswap_ensure_same_minute
 
 change_height=$(brainswap_calculate_safe_swap_height)
-swap_wait=$(calculate_swap_wait_minutes $change_height)
+swap_wait=$(brainswap_calculate_swap_wait_minutes $change_height)
 
 [ "$QUIET" != 1 ] && echo "Ready to brainswap at block height $change_height, in about $swap_wait minutes:" >&2
 

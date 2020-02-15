@@ -214,6 +214,14 @@ function brainswap_ensure_not_same_identity_return_true() {
 	node1_IdCId="1234567890123456789012345678901234567890123456789012345678901234"
 	node2_IdCId="2345678901234567890123456789012345678901234567890123456789012345"
 	run_expect_error 0 brainswap_ensure_not_same_identity
+
+	node1_IdCId=
+	node2_IdCId="2345678901234567890123456789012345678901234567890123456789012345"
+	run_expect_error 0 brainswap_ensure_not_same_identity
+
+	node1_IdCId="1234567890123456789012345678901234567890123456789012345678901234"
+	node2_IdCId=
+	run_expect_error 0 brainswap_ensure_not_same_identity
 }
 brainswap_ensure_not_same_identity_return_true
 
@@ -224,15 +232,7 @@ function brainswap_ensure_not_same_identity_return_false() {
 
 	node1_IdCId=
 	node2_IdCId=
-	run_expect_error 2 brainswap_ensure_not_same_identity
-
-	node1_IdCId=
-	node2_IdCId="2345678901234567890123456789012345678901234567890123456789012345"
-	run_expect_error 2 brainswap_ensure_not_same_identity
-
-	node1_IdCId="1234567890123456789012345678901234567890123456789012345678901234"
-	node2_IdCId=
-	run_expect_error 2 brainswap_ensure_not_same_identity
+	run_expect_error 1 brainswap_ensure_not_same_identity
 }
 brainswap_ensure_not_same_identity_return_false
 

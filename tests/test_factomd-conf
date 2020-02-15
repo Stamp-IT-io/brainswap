@@ -90,20 +90,25 @@ function get_factomd_conf_output_ok() {
 }
 get_factomd_conf_output_ok
 
+function extract_factomd_keys_bad_prefix_return_false() {
+        run_expect_error 1 extract_conf_keys bad-prefix <$CONF_TESTNET_IDS1_DOS
+}
+extract_factomd_keys_bad_prefix_return_false
+
 function extract_factomd_keys_sets_variables_correctly_with_prefix() {
-        extract_conf_keys eprefixid <$CONF_TESTNET_IDS1_DOS
+        extract_conf_keys eprefixid1 <$CONF_TESTNET_IDS1_DOS
         extract_conf_keys eprefixnoid <$CONF_TESTNET_NOID_DOS
         extract_conf_keys eprefixnocah <$CONF_TESTNET_NOCAH
 
-	run_expect_error 0 [ "$eprefixid_IdCId_line" == "$(grep ^IdentityChainID <$CONF_TESTNET_IDS1_DOS)" ]
-	run_expect_error 0 [ "$eprefixid_IdCId" == "8888881234567890123456789012345678901234567890123456789012345678" ]
-	run_expect_error 0 [ "$eprefixid_IdCId_short" == "123456" ]
-	run_expect_error 0 [ "$eprefixid_LSPrivK_line" == "$(grep ^LocalServerPrivKey <$CONF_TESTNET_IDS1_DOS)" ]
-	run_expect_error 0 [ "$eprefixid_LSPrivK" == "1234567890123456789012345678901234567890123456789012345678901234" ]
-	run_expect_error 0 [ "$eprefixid_LSPubK_line" == "$(grep ^LocalServerPublicKey <$CONF_TESTNET_IDS1_DOS)" ]
-	run_expect_error 0 [ "$eprefixid_LSPubK" == "9876543210987654321098765432109876543210987654321098765432109876" ]
-	run_expect_error 0 [ "$eprefixid_CAH_line" == "$(grep ^ChangeAcksHeight <$CONF_TESTNET_IDS1_DOS)" ]
-	run_expect_error 0 [ "$eprefixid_CAH" == "87432" ]
+	run_expect_error 0 [ "$eprefixid1_IdCId_line" == "$(grep ^IdentityChainID <$CONF_TESTNET_IDS1_DOS)" ]
+	run_expect_error 0 [ "$eprefixid1_IdCId" == "8888881234567890123456789012345678901234567890123456789012345678" ]
+	run_expect_error 0 [ "$eprefixid1_IdCId_short" == "123456" ]
+	run_expect_error 0 [ "$eprefixid1_LSPrivK_line" == "$(grep ^LocalServerPrivKey <$CONF_TESTNET_IDS1_DOS)" ]
+	run_expect_error 0 [ "$eprefixid1_LSPrivK" == "1234567890123456789012345678901234567890123456789012345678901234" ]
+	run_expect_error 0 [ "$eprefixid1_LSPubK_line" == "$(grep ^LocalServerPublicKey <$CONF_TESTNET_IDS1_DOS)" ]
+	run_expect_error 0 [ "$eprefixid1_LSPubK" == "9876543210987654321098765432109876543210987654321098765432109876" ]
+	run_expect_error 0 [ "$eprefixid1_CAH_line" == "$(grep ^ChangeAcksHeight <$CONF_TESTNET_IDS1_DOS)" ]
+	run_expect_error 0 [ "$eprefixid1_CAH" == "87432" ]
 
 	run_expect_error 0 [ "$eprefixnoid_IdCId_line" == "" ]
 	run_expect_error 0 [ "$eprefixnoid_IdCId" == "" ]

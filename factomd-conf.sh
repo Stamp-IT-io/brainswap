@@ -84,7 +84,7 @@ function extract_conf_keys() {
 	# sed script to extract ChangeAcksHeight
 	SED_CAH_SCRIPT='s/^[[:space:]]*ChangeAcksHeight[[:space:]]*=[[:space:]]*\(\([0-9]\)*\)[^0-9a-zA-Z]*$/\1/pI'
 
-	if ! echo "$prefix" | grep -q "^[a-zA-Z0-9]*$"; then
+	if ! [[ "$prefix" =~ ^[a-zA-Z0-9]*$ ]]; then
 		print_error_stack_exit "invalid prefix ($prefix)" >&2
 	fi
 

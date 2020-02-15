@@ -63,6 +63,7 @@ function get_factomd_home_returns_false() {
         run_expect_error 1 get_factomd_home root@localhost:2219
         run_expect_error 1 get_factomd_home root@localhost:2220
         run_expect_error 1 get_factomd_home root@localhost:2221
+        run_expect_error 1 get_factomd_home root@localhost:2222 bad-prefix
 }
 get_factomd_home_returns_false
 

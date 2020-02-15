@@ -111,8 +111,6 @@ function brainswap_ensure_not_same_identity() {
 	for v in node1_IdCId node2_IdCId; do
 		test -v $v
 		print_error_stack_exit_if_failed "Assertion failed: $v not set"
-		eval test "\$$v" != "''"
-		print_error_stack_exit_if_failed "Assertion failed: $v empty"
 	done
 
 	if [ "$node1_IdCId" = "$node2_IdCId" ]; then

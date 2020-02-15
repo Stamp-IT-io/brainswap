@@ -10,7 +10,7 @@ function get_factomd_details() {
 	# Also honors QUIET=1 global variable
 	access_spec=$1 					# e.g. jumpuser@jumphost:jumpport,user@host:port
 	prefix=$2
-	if ! [[ "$prefix" =~ ^[a-zA-Z]*$ ]]; then
+	if ! [[ "$prefix" =~ ^[a-zA-Z0-9]*$ ]]; then
 		print_error_stack_exit "Invalid prefix ($prefix)"
 	fi
 
@@ -77,7 +77,7 @@ function get_factomd_home() {
 	# Also honors QUIET=1 global variable
 	access_spec=$1 					# e.g. jumpuser@jumphost:jumpport,user@host:port
 	prefix=$2
-	if ! echo "$prefix" | grep -q "^[a-zA-Z0-9]*$"; then
+	if ! [[ "$prefix" =~ ^[a-zA-Z0-9]*$ ]]; then
 		print_error_stack_exit "invalid prefix ($prefix)" >&2
 	fi
 
