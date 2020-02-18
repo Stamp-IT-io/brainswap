@@ -1,0 +1,15 @@
+#!/bin/bash
+
+SELF_PATH="$(dirname "${BASH_SOURCE[0]}")"
+RELEASE_PATH="$SELF_PATH/release"
+
+set -e
+
+mkdir -p "$RELEASE_PATH"
+
+# Concatenate all source files while removing "source" instructions
+grep -h -v "^source" error.sh parse.sh ssh.sh factomd-conf.sh factomd-status.sh brainswap.sh brainswap >"$RELEASE_PATH/brainswap"
+
+chmod +x "$RELEASE_PATH/brainswap"
+
+echo "Create release script in $RELEASE_PATH/brainswap"
