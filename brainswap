@@ -21,8 +21,10 @@ source "$(dirname "${BASH_SOURCE[0]}")/brainswap.sh"
 # Uncomment the following line to turn on debugging
 #set -x
 
+BRAINSWAP_VERSION="2.0-alpha1"
+
 function usage() {
-	echo "Stamp-IT brainswap  Copyright 2018 Stamp-IT Blockchain Solution inc."
+	echo "Stamp-IT Brainswap v$BRAINSWAP_VERSION Copyright 2018 Stamp-IT Blockchain Solution inc."
 	echo
 	echo "Uses OpenSSH to brainswap two factomd nodes."
 	echo
@@ -42,6 +44,7 @@ function usage() {
 }
 
 NOSWAP=
+ack_alpha=
 
 while [ "$1" != "" ]; do
 	case "$1" in
@@ -61,6 +64,9 @@ while [ "$1" != "" ]; do
 		;;
 	"--noswap")
 		NOSWAP=1
+		;;
+	"--ack-alpha")
+		ack_alpha=1
 		;;
 	"--quiet")
 		QUIET=1
@@ -88,7 +94,7 @@ while [ "$1" != "" ]; do
 	shift
 done
 
-[ "$QUIET" != 1 ] && echo "Stamp-IT brainswap for factomd" >&2
+[ "$QUIET" != 1 ] && echo "Stamp-IT Brainswap v$BRAINSWAP_VERSION for factomd" >&2
 
 # Parameters looking good
 if [ -z "$node1" -o -z "$node2" ]; then
@@ -101,8 +107,11 @@ if [ "$node1" = "$node2" ]; then
 	print_error_stack_exit "$node1 and $node2 are the same nodes, no brainswap needed."
 fi
 
-echo "This is a pre-alpha version of brainswap. You should not use it except to give feedback." >&2
-exit 1
+if [ "$ack_alpha" != "1" ]; then
+	echo "This is an alpha version of brainswap. Do not use it on production nodes." >&2
+	echo "Use option --ack-alpha if you are sure you want to use it." >&2
+	exit 1
+fi
 
 #########
 # Accessing node 1 to obtain and validate some informations...

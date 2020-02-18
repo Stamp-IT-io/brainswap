@@ -72,10 +72,9 @@ Here are the checks made by the script before brainswaping:
 * IdentityChainID NOT the same on both nodes
 * State information from factomd parses correctly on both nodes
 * Same block height for both nodes
-* Same minute on both nodes, but not minute 0 (because in this case we cannot tell if the follower is following minutes)
+* Same minute on both nodes, but not minute 0 (because in this case we cannot tell if the nodes are is following minutes)
 * No `<nil>` in the process list, on both nodes
-* Calculated brainswap height greater than `ChangeAcksHeight`, if any, on both nodes
-* No factomd node runs v6.1.1, v6.1.1-rc1 or v6.2.1-rc1
+* Calculated brainswap height greater than `ChangeAcksHeight`, if any, on both nodes (i.e. no pending brainswap)
 * IdentityChainID, LocalServerPrivKey and LocalServerPublicKey all set in node1 `factomd.conf`
 * Node1 is an audit or a leader (otherwise it could indicate that a wrong node has been specified)
 * `--noswap` not specified
