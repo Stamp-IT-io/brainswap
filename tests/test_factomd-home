@@ -28,6 +28,8 @@ function _on_exit() {
 	docker stop test-factomd-632-ssh >/dev/null
 	docker stop test-factomd-633rc >/dev/null
 	docker stop test-factomd-633rc-ssh >/dev/null
+	docker stop test-factomd-latest >/dev/null
+	docker stop test-factomd-latest-ssh >/dev/null
 }
 trap _on_exit EXIT
 
@@ -108,7 +110,7 @@ function get_factomd_home_sets_variables_correctly_with_prefix() {
 	run_expect_error 0 [ "$prefixm633rc_factomd_build" == "7fd7716f5af4f8962ef9390adb0f4e4416eb22da" ]
 	run_expect_error 0 [ "$prefixf632_factomd_build" == "c429cbf87dd732ffaf95663fa2b5ab900e33e04d" ]
 	run_expect_error 0 [ "$prefixf633rc_factomd_build" == "7fd7716f5af4f8962ef9390adb0f4e4416eb22da" ]
-	run_expect_error 0 [[ "$prefixflatest_factomd_build" =~ ^[0-9a-f]{40}$ ]]
+	run_expect_error 0 [ "${#prefixflatest_factomd_build}" = 40 ]
 }
 get_factomd_home_sets_variables_correctly_with_prefix
 
