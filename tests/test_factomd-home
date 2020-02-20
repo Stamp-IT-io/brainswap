@@ -1,5 +1,9 @@
 #!/usr/bin/env run_bash_test
 
+# You can change the following line to test whether a new version of Factomd is compatible with brainswap
+FACTOMD_LATEST_TAG=v6.5.2-alpine
+FACTOMD_LATEST_VERSION=${FACTOMD_LATEST_TAG%-alpine}
+
 SELF_DIR="$(dirname "${BASH_SOURCE[0]}")"
 
 source $SELF_DIR/../ssh.sh
@@ -39,6 +43,9 @@ docker run --rm -d --name "test-factomd-632" --network=container:test-factomd-63
 # The two following containers share the same network namespace
 docker run --rm -d --name "test-factomd-633rc-ssh" -p 2225:22 alpine-dropbear
 docker run --rm -d --name "test-factomd-633rc" --network=container:test-factomd-633rc-ssh factominc/factomd:v6.3.3-rc1-alpine 
+# The two following containers share the same network namespace
+docker run --rm -d --name "test-factomd-latest-ssh" -p 2226:22 alpine-dropbear
+docker run --rm -d --name "test-factomd-latest" --network=container:test-factomd-latest-ssh factominc/factomd:$FACTOMD_LATEST_TAG
 
 sleep 1	# Give a little bit of time for containers to complete their initialization
 
@@ -48,6 +55,7 @@ function get_factomd_home_returns_true() {
         run_expect_error 0 get_factomd_home root@localhost:2223
         run_expect_error 0 get_factomd_home root@localhost:2224
         run_expect_error 0 get_factomd_home root@localhost:2225
+        run_expect_error 0 get_factomd_home root@localhost:2226
 }
 get_factomd_home_returns_true
 
@@ -56,6 +64,7 @@ function get_factomd_version_output_ok() {
         run_expect_output "v6.3.3-rc1" get_factomd_version root@localhost:2223
         run_expect_output "v6.3.2" get_factomd_version root@localhost:2224
         run_expect_output "v6.3.3-rc1" get_factomd_version root@localhost:2225
+        run_expect_output "v6.5.2" get_factomd_version root@localhost:2226
 }
 get_factomd_version_output_ok
 
@@ -87,14 +96,19 @@ function get_factomd_home_sets_variables_correctly_with_prefix() {
         get_factomd_home root@localhost:2225 prefixf633rc </dev/null >/dev/null 2>/dev/null
 	expect_error 0	# Cannot use run_expect_error because variables would not be set here (outside of subshell)
 
+	get_factomd_home root@localhost:2226 prefixflatest </dev/null >/dev/null 2>/dev/null
+	expect_error 0	# Cannot use run_expect_error because variables would not be set here (outside of subshell)
+
 	run_expect_error 0 [ "$prefixm632_factomd_version" == "v6.3.2" ]
 	run_expect_error 0 [ "$prefixm633rc_factomd_version" == "v6.3.3-rc1" ]
 	run_expect_error 0 [ "$prefixf632_factomd_version" == "v6.3.2" ]
 	run_expect_error 0 [ "$prefixf633rc_factomd_version" == "v6.3.3-rc1" ]
+	run_expect_error 0 [ "$prefixflatest_factomd_version" == "$FACTOMD_LATEST_VERSION" ]
 	run_expect_error 0 [ "$prefixm632_factomd_build" == "c429cbf87dd732ffaf95663fa2b5ab900e33e04d" ]
 	run_expect_error 0 [ "$prefixm633rc_factomd_build" == "7fd7716f5af4f8962ef9390adb0f4e4416eb22da" ]
 	run_expect_error 0 [ "$prefixf632_factomd_build" == "c429cbf87dd732ffaf95663fa2b5ab900e33e04d" ]
 	run_expect_error 0 [ "$prefixf633rc_factomd_build" == "7fd7716f5af4f8962ef9390adb0f4e4416eb22da" ]
+	run_expect_error 0 [[ "$prefixflatest_factomd_build" =~ ^[0-9a-f]{40}$ ]]
 }
 get_factomd_home_sets_variables_correctly_with_prefix
 
