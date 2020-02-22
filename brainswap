@@ -21,7 +21,7 @@ source "$(dirname "${BASH_SOURCE[0]}")/brainswap.sh"
 # Uncomment the following line to turn on debugging
 #set -x
 
-BRAINSWAP_VERSION="2.0-alpha1"
+BRAINSWAP_VERSION="2.0-alpha2"
 
 function usage() {
 	echo "Stamp-IT Brainswap v$BRAINSWAP_VERSION Copyright 2018 Stamp-IT Blockchain Solution inc."
