@@ -18,10 +18,11 @@ function get_factomd_conf_path() {
 
 function get_factomd_conf() {
 	local sudo access_spec remote_node conf_content return_value
+	sudo=
 
 	# Also honors QUIET=1 global variable
 	if [ "$1" == "--sudo" ]; then
-		sudo="--sudo"
+		sudo="sudo"
 		shift
 	fi
 	access_spec=$1 					# e.g. jumpuser@jumphost:jumpport,user@host:port
@@ -42,10 +43,11 @@ function get_factomd_conf() {
 
 function put_factomd_conf() {
 	local sudo access_spec remote_node conf_content return_value
+	sudo=
 
 	# Also honors QUIET=1 global variable
 	if [ "$1" == "--sudo" ]; then
-		sudo="--sudo"
+		sudo="sudo"
 		shift
 	fi
 	access_spec=$1 					# e.g. jumpuser@jumphost:jumpport,user@host:port
@@ -56,7 +58,7 @@ function put_factomd_conf() {
 	[ "$QUIET" != 1 ] && echo "Overwriting $FACTOMD_CONF_PATH on $remote_node..." >&2
 
 	# Obtain config from remote_node
-	do_ssh $sudo $1 sh -c '"cat >'"$FACTOMD_CONF_PATH"'"' <<<"$conf_content"
+	do_ssh $access_spec $sudo sh -c '"cat >'"$FACTOMD_CONF_PATH"'"' <<<"$conf_content"
 	print_error_stack_exit_if_failed "cannot connect to $remote_node or factomd.conf not writable. (try --sudo ?)"
 
 	return 0
@@ -130,6 +132,7 @@ function extract_conf_keys() {
 
 function get_factomd_keys() {
 	local sudo access_spec prefix conf_content
+	sudo=
 
 	# Also honors QUIET=1 global variable
 	if [ "$1" == "--sudo" ]; then
@@ -149,10 +152,11 @@ function get_factomd_keys() {
 
 function ensure_factomd_conf_writable() {
 	local sudo access_spec prefix remote_node
+	sudo=
 
 	# Also honors QUIET=1 global variable
 	if [ "$1" == "--sudo" ]; then
-		sudo="--sudo"
+		sudo="sudo"
 		shift
 	fi
 	access_spec=$1 					# e.g. jumpuser@jumphost:jumpport,user@host:port

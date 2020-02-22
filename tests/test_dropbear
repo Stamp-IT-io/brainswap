@@ -16,7 +16,6 @@ docker run -d --rm --name test1 -p 2222:22 alpine-dropbear
 
 # Tests
 function dropbear_exec_false_return_ok () {
-        run_expect_error 0 docker exec -i test1 true
         run_expect_error 1 docker exec -i test1 false
 }
 dropbear_exec_false_return_ok
@@ -27,15 +26,21 @@ function dropbear_exec_output_ok () {
 dropbear_exec_output_ok
 
 function dropbear_ssh_false_return_ok () {
-        run_expect_error 0 ssh root@localhost -p 2222 true
         run_expect_error 1 ssh root@localhost -p 2222 false
+        run_expect_error 1 ssh user@localhost -p 2222 false
 }
 dropbear_ssh_false_return_ok
 
 function dropbear_ssh_output_ok () {
         run_expect_output "hello" ssh root@localhost -p 2222 echo hello
+        run_expect_output "hello" ssh user@localhost -p 2222 echo hello
 }
 dropbear_ssh_output_ok
+
+function dropbear_sudo_output_ok () {
+        run_expect_output "hello" ssh user@localhost -p 2222 sudo echo hello
+}
+dropbear_sudo_output_ok
 
 function dropbear_ssh_input_ok () {
         run_expect_output --stdin "hello" ssh root@localhost -p 2222 cat <<<"hello"

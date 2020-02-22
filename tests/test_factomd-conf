@@ -75,11 +75,21 @@ function no_conf_return_false() {
 }
 no_conf_return_false
 
+function no_access_return_false() {
+        run_expect_error 1 get_factomd_conf user@localhost:2222
+        run_expect_error 1 get_factomd_keys user@localhost:2222
+        run_expect_error 1 ensure_factomd_conf_writable user@localhost:2222
+}
+no_access_return_false
+
 
 function mod_600_return_true() {
         run_expect_error 0 get_factomd_conf root@localhost:2222
         run_expect_error 0 get_factomd_keys root@localhost:2222
         run_expect_error 0 ensure_factomd_conf_writable root@localhost:2222
+        run_expect_error 0 get_factomd_conf --sudo user@localhost:2222
+        run_expect_error 0 get_factomd_keys --sudo user@localhost:2222
+        run_expect_error 0 ensure_factomd_conf_writable --sudo user@localhost:2222
 }
 mod_600_return_true
 
@@ -87,6 +97,7 @@ function get_factomd_conf_output_ok() {
 	local output
 
 	run_expect_output "$(cat $CONF_TESTNET_IDS1_DOS)" get_factomd_conf root@localhost:2222
+	run_expect_output "$(cat $CONF_TESTNET_IDS1_DOS)" get_factomd_conf --sudo user@localhost:2222
 }
 get_factomd_conf_output_ok
 
@@ -152,7 +163,7 @@ extract_factomd_keys_sets_variables_correctly_without_prefix
 function get_factomd_keys_sets_variables_correctly_with_prefix() {
         get_factomd_keys root@localhost:2222 gprefixid
         get_factomd_keys root@localhost:2223 gprefixnoid
-        get_factomd_keys root@localhost:2224 gprefixnocah
+        get_factomd_keys --sudo user@localhost:2224 gprefixnocah
 
 	run_expect_error 0 [ "$gprefixid_IdCId_line" == "$(grep ^IdentityChainID <$CONF_TESTNET_IDS1_DOS)" ]
 	run_expect_error 0 [ "$gprefixid_IdCId" == "8888881234567890123456789012345678901234567890123456789012345678" ]
@@ -226,7 +237,7 @@ function put_factomd_conf_works_correctly() {
 	docker exec -i test5 sh -c "rm -f ${EXPECTED_CONF_PATH}"
 
 	# Create a new config file
-        run_expect_error 0 put_factomd_conf root@localhost:2225 "$(cat $CONF_TESTNET_BADID2)"
+        run_expect_error 0 put_factomd_conf --sudo user@localhost:2225 "$(cat $CONF_TESTNET_BADID2)"
 	run_expect_output "$(cat $CONF_TESTNET_BADID2)" docker exec -i test5 sh -c "cat $(get_factomd_conf_path root@localhost:2225)"
 
 	# Overwrite config file
@@ -237,7 +248,7 @@ put_factomd_conf_works_correctly
 
 
 function put_factomd_conf_cannot_write() {
-	# user account should not be able to overwrite
+	# user account without --sudo should not be able to overwrite
         run_expect_error 1 put_factomd_conf user@localhost:2225 "$(cat $CONF_TESTNET_BADID2)"
 }
 put_factomd_conf_cannot_write
