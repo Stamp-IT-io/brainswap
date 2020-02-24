@@ -263,7 +263,7 @@ function brainswap_do_brainswap() {
 		print_error_stack_exit_if_failed "Assertion failed: $v not set"
 	done
 
-	local change_height new_conf1 new_conf2
+	local change_height new_conf1 new_conf2 conf_path
 	change_height=$1
 
 	if ! [ "$change_height" -gt 0 ]; then
@@ -282,10 +282,12 @@ function brainswap_do_brainswap() {
 	new_conf2="$(replace_conf_identity "$node2_conf" "$change_height" "$node1_IdCId" "$node1_LSPrivK" "$node1_LSPubK")"
 
 	[ "$QUIET" != 1 ] && echo "Rewriting factomd.conf on $node1..." >&2
-	(put_factomd_conf $node1 "$new_conf1" 2>/dev/null)	# We replace the error message, if any (subshell to prevent exit)
-	print_error_stack_exit_if_failed "$0: Error overwriting $(get_factomd_conf_path $node1) on $node1, BRAINSWAP FAILED, you must check that config was not overwritten."
+	conf_path=$(get_factomd_conf_path $node1)			# We obtain the path in advance to avoid interference with return values
+	(put_factomd_conf $sudo1 $node1 "$new_conf1" 2>/dev/null)	# We replace the error message, if any (subshell to prevent exit)
+	print_error_stack_exit_if_failed "$0: Error overwriting $conf_path on $node1, BRAINSWAP FAILED, you must check that config was not overwritten."
 
 	[ "$QUIET" != 1 ] && echo "Rewriting factomd.conf on $node2..." >&2
-	(put_factomd_conf $node2 "$new_conf2" 2>/dev/null)	# We replace the error message, if any (subshell to prevent exit)
-	print_error_stack_exit_if_failed "$0: Error overwriting $CONF_PATH on $(get_factomd_conf_path $node2), BRAINSWAP FAILED, you must check that both nodes do not have the same identity."
+	conf_path=$(get_factomd_conf_path $node2)			# We obtain the path in advance to avoid interference with return values
+	(put_factomd_conf $sudo2 $node2 "$new_conf2" 2>/dev/null)	# We replace the error message, if any (subshell to prevent exit)
+	print_error_stack_exit_if_failed "$0: Error overwriting $conf_path on $node2, BRAINSWAP FAILED, you must check that both nodes do not have the same identity."
 }
