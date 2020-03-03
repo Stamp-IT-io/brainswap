@@ -17,7 +17,7 @@ or should be able to `sudo`.
     brainswap [--sudo] [--noswap] [user1@]node1[:port1] [user2@]node2[:port2]
 
 * `node1` must be an authority node
-* `node2` should NOT be an authority node
+* `node2` is usually not an authority node, but it can be if you want to do a full brainswap, i.e. exchange identities of two nodes
 
 E.g.:
 If you can login directly as `root`:
@@ -110,7 +110,7 @@ Probably. It has been successfully tested it using the following procedure:
 
 * Inside Termux, download brainswap:
 
-      wget https://github.com/Stamp-IT-io/brainswap/raw/master/brainswap
+      wget https://github.com/Stamp-IT-io/brainswap/releases/download/v2.0.0/brainswap
       chmod +x brainswap
 
 * Setup OpenSSH to login without password.
