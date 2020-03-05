@@ -2,6 +2,8 @@
 
 In this directory and its sub-directory, you will find everything that has been designed specifically to test the brainswap script.
 
+File                     | Description
+---                      | ---
 alpine-dropbear          | Contains a script and a Dockerfile to build a container image with dropbear (SSH server) and a known ssh key
 alpine-httpd             | Contains a script and a Dockerfile to build a container image with Busybox HTTPD server and dropbear with a known ssh key
 ssh-keys                 | Contains the known SSH key for the container images above
