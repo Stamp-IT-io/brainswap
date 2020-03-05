@@ -5,14 +5,6 @@ SELF_DIR="$(dirname "${BASH_SOURCE[0]}")"
 source $SELF_DIR/../ssh.sh
 source $SELF_DIR/../factomd-status.sh
 
-if ! grep -q '^[[:space:]]*StrictHostKeyChecking no' ~/.ssh/config; then
-	echo 'You should consider adding the following section to your ~/.ssh/config to avoid SSH trying to ask to accept new keys during the tests:' >&2
-	echo 'Host localhost' >&2
-	echo '	Hostname localhost' >&2
-	echo '	StrictHostKeyChecking no' >&2
-
-fi
-
 # Tear down after the tests
 function _on_exit() {
 	docker stop test-nohttpd >/dev/null

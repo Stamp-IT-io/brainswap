@@ -1,3 +1,0 @@
-#!/bin/bash
-chmod go-r "$(dirname "${BASH_SOURCE[0]}")/test_brainswap.pem"
-echo "IdentityFile $(realpath $(dirname "${BASH_SOURCE[0]}"))/test_brainswap.pem" >>~/.ssh/config

@@ -1,0 +1,29 @@
+#!/bin/bash
+
+# Private key must be readable only by the user
+chmod go-r "$(dirname "${BASH_SOURCE[0]}")/test_brainswap.pem"
+
+# Install ssh client private key
+ID_LINE="IdentityFile $(realpath $(dirname "${BASH_SOURCE[0]}"))/test_brainswap.pem" >>~/.ssh/config
+if ! fgrep -q "$ID_LINE" ~/.ssh/config; then
+	echo "Configuring SSH client private key..."
+	SSH_CONFIG="$(cat ~/.ssh/config)"
+	{
+		# Add the identity file at the begining of SSH config
+		echo "IdentityFile $(realpath $(dirname "${BASH_SOURCE[0]}"))/test_brainswap.pem"
+		echo "$SSH_CONFIG"
+	} >~/.ssh/config
+fi
+
+WELL_KNOWN_PUB_KEY="AAAAB3NzaC1yc2EAAAADAQABAAABAQCJ/WVDN5F+ZpjRx9LDMPzLgCoq86eMkuezCUiYKqevyJIDdQaQaqrCDH61AlkAlemDUe1g/ad4Vhrv02MH89q4kzps+RehhNjSg9at1YT1K8FKcxrUb4RdDbWMRCyHgoJUU+gqnBuwHaA+maPmRvZK59skoUccajx2VZShFVSfKtwBCEVHmZUOec8Gn1bLUMm0rgt25S/NU+HYD5q0NiWmdd/B5LpHBvzMezEEF9FIn9j+r6ZDCvDwWsrxfH3SNOjOFXz5Brru7QWk5+Z7dxIjV3gDdsnKtvkfXF3AlD1hyUeEQz8qh0ta/3jM8y40V+FVHCv8q2lfyh9iENT19A1r"
+
+# The following ports are used in at least on test
+for port in 2219 2220 2221 2222 2223 2224 2225 2226 3333; do
+	# Install the well-known server public key for this port
+	if ! ssh-keygen -F [localhost]:$port -f ~/.ssh/known_hosts >>/dev/null; then
+		echo "Configuring known host key for [localhost]:$port..."
+		echo "[localhost]:$port ssh-rsa $WELL_KNOWN_PUB_KEY brainswap test" >>~/.ssh/known_hosts
+	fi
+done
+
+echo "SSH key configuration complete."

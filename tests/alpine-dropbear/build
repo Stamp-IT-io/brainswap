@@ -3,7 +3,8 @@
 SELF_DIR="$(dirname "${BASH_SOURCE[0]}")"
 
 cp "$SELF_DIR/../ssh-keys/test_brainswap.pub" "$SELF_DIR"
+cp "$SELF_DIR/../ssh-keys/dropbear_rsa_host_key" "$SELF_DIR"
 docker build -t alpine-dropbear "$SELF_DIR"
 
-echo "To run dropbear: docker run -d --rm alpine-dropbear"
+echo "To run dropbear: docker run -d --rm -p 2222:22 alpine-dropbear"
 echo "and then connect with: ssh root@localhost -p 2222"
