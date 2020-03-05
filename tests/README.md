@@ -1,8 +1,8 @@
 # Automated tests for Stamp-IT Brainswap
 
-In this directory and its sub-directory, you will find everything that has been designed specifically to test the brainswap script.
+In this directory and its sub-directories, you will find everything that has been designed specifically to test the brainswap script.
 
-File                     | Description
+File / directory         | Description
 ---                      | ---
 alpine-dropbear          | Contains a script and a Dockerfile to build a container image with dropbear (SSH server) and a known ssh key
 alpine-httpd             | Contains a script and a Dockerfile to build a container image with Busybox HTTPD server and dropbear with a known ssh key
