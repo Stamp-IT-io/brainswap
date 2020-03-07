@@ -3,6 +3,9 @@
 # Private key must be readable only by the user
 chmod go-r "$(dirname "${BASH_SOURCE[0]}")/test_brainswap.pem"
 
+# Make sure ~/.ssh exists
+mkdir -p ~/.ssh
+
 # Install ssh client private key
 ID_LINE="IdentityFile $(realpath $(dirname "${BASH_SOURCE[0]}"))/test_brainswap.pem" >>~/.ssh/config
 if ! fgrep -q "$ID_LINE" ~/.ssh/config; then

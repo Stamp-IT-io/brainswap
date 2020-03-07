@@ -12,7 +12,8 @@ volume-\*                | Various volumes to be mounted inside containers durin
 test\_\*                 | Tests for the brainswap script; they use the container images, files and volumes described above to simulate a Factomd node
 run\_all\_tests          | Script to run all the tests
 
-Before running the tests, you must build two docker images:
+To run the tests, OpenSSH client and Docker must be installed.
+Before running them, you must build two docker images:
 
     ./alpine-dropbear/build
     ./alpine-httpd/build
