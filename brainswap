@@ -21,7 +21,7 @@ source "$(dirname "${BASH_SOURCE[0]}")/brainswap.sh"
 # Uncomment the following line to turn on debugging
 #set -x
 
-BRAINSWAP_VERSION="2.0-alpha2"
+BRAINSWAP_VERSION="2.0.0-beta1"
 
 function usage() {
 	echo "Stamp-IT Brainswap v$BRAINSWAP_VERSION Copyright 2018 Stamp-IT Blockchain Solution inc."
@@ -107,11 +107,11 @@ if [ "$node1" = "$node2" ]; then
 	print_error_stack_exit "$node1 and $node2 are the same nodes, no brainswap needed."
 fi
 
-if [ "$ack_alpha" != "1" ]; then
-	echo "This is an alpha version of brainswap. Do not use it on production nodes." >&2
-	echo "Use option --ack-alpha if you are sure you want to use it." >&2
-	exit 1
-fi
+#if [ "$ack_alpha" != "1" ]; then
+#	echo "This is an alpha version of brainswap. Do not use it on production nodes." >&2
+#	echo "Use option --ack-alpha if you are sure you want to use it." >&2
+#	exit 1
+#fi
 
 #########
 # Accessing node 1 to obtain and validate some informations...
