@@ -21,10 +21,10 @@ source "$(dirname "${BASH_SOURCE[0]}")/brainswap.sh"
 # Uncomment the following line to turn on debugging
 #set -x
 
-BRAINSWAP_VERSION="2.0.0-beta1"
+BRAINSWAP_VERSION="2.0.0"
 
 function usage() {
-	echo "Stamp-IT Brainswap v$BRAINSWAP_VERSION Copyright 2018 Stamp-IT Blockchain Solution inc."
+	echo "Stamp-IT Brainswap v$BRAINSWAP_VERSION Copyright 2018-2020 Stamp-IT Blockchain Solution inc."
 	echo
 	echo "Uses OpenSSH to brainswap two factomd nodes."
 	echo
